@@ -1,9 +1,10 @@
 import sqlite3
+from Code.Globals import DB_PATH
 
 class DatabaseConnection:
-    def __init__(self):
+    def __init__(self, db_path=DB_PATH):
         self.connection = None
-        self.db_path = None
+        self.db_path = db_path
     def connect(self):
         """Establish a connection to the SQLite database."""
         self.db_path = self.db_path
