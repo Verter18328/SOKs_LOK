@@ -1,4 +1,5 @@
 import os
+import sys
 from DatabaseConnection import DatabaseConnection
 from PySide6.QtUiTools import QUiLoader
 
@@ -14,5 +15,14 @@ class Globals:
             os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'OperatorWindow.ui')
         )
     }
+    RESOURCES_PATHS_DICT = {
+        'LOGO_IMAGE': os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', 'Resources', 'logo.jpeg')
+        )
+    }
     def __init__(self):
         self.database = DatabaseConnection()
+    
+    @staticmethod
+    def setMainDirectory():
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

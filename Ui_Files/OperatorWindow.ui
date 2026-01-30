@@ -26,15 +26,15 @@
          <rect>
           <x>290</x>
           <y>220</y>
-          <width>361</width>
-          <height>271</height>
+          <width>321</width>
+          <height>241</height>
          </rect>
         </property>
         <property name="text">
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap resource="resources.qrc">:/images/logo.jpeg</pixmap>
+         <pixmap resource="../Resources/resources.qrc">:/images/logo.jpeg</pixmap>
         </property>
         <property name="scaledContents">
          <bool>true</bool>
@@ -61,10 +61,19 @@
     <property name="title">
      <string>Zawody</string>
     </property>
+    <addaction name="separator"/>
     <addaction name="actionNowe_Zawody_Create"/>
+    <addaction name="separator"/>
     <addaction name="actionOtworz_Zawody"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menuZawodnicy">
+    <property name="title">
+     <string>Zawodnicy</string>
+    </property>
    </widget>
    <addaction name="menuBagno"/>
+   <addaction name="menuZawodnicy"/>
   </widget>
   <action name="actionNowe_Zawody_Create">
    <property name="text">
@@ -90,7 +99,7 @@
   </action>
  </widget>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../Resources/resources.qrc"/>
  </resources>
  <connections/>
 </ui>
