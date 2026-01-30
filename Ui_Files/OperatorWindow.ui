@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>966</width>
-    <height>783</height>
+    <width>967</width>
+    <height>779</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -50,7 +50,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>966</width>
+     <width>967</width>
      <height>33</height>
     </rect>
    </property>
@@ -71,15 +71,36 @@
     <property name="title">
      <string>Zawodnicy</string>
     </property>
+    <addaction name="separator"/>
+    <addaction name="actionZarzadzanie_zawodnikami"/>
+    <addaction name="separator"/>
    </widget>
+   <widget class="QMenu" name="menuWy_wietlanie">
+    <property name="title">
+     <string>Wyświetlanie</string>
+    </property>
+    <property name="separatorsCollapsible">
+     <bool>false</bool>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionRozpocznij_Wyswietlanie"/>
+    <addaction name="separator"/>
+    <addaction name="actionZako_cz_Wy_wietlanie"/>
+    <addaction name="separator"/>
+   </widget>
+   <addaction name="menuWy_wietlanie"/>
    <addaction name="menuBagno"/>
    <addaction name="menuZawodnicy"/>
   </widget>
+  <widget class="QStatusBar" name="statusBar"/>
   <action name="actionNowe_Zawody_Create">
    <property name="text">
     <string>Nowe Zawody</string>
    </property>
    <property name="toolTip">
+    <string>Nowe Zawody</string>
+   </property>
+   <property name="statusTip">
     <string>Tworzy Nowe Zawody</string>
    </property>
    <property name="menuRole">
@@ -91,7 +112,52 @@
     <string>Otwórz Zawody</string>
    </property>
    <property name="toolTip">
+    <string>Otwórz Zawody</string>
+   </property>
+   <property name="statusTip">
     <string>Otwiera Zapisane Zawody</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionZarzadzanie_zawodnikami">
+   <property name="text">
+    <string>Zarządzanie zawodnikami</string>
+   </property>
+   <property name="toolTip">
+    <string>Zarządzanie zawodnikami</string>
+   </property>
+   <property name="statusTip">
+    <string>Przechodzi do panelu zarządzania zawodnikami</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionRozpocznij_Wyswietlanie">
+   <property name="text">
+    <string>Rozpocznij Wyświetlanie</string>
+   </property>
+   <property name="toolTip">
+    <string>Rozpocznij Wyświetlanie</string>
+   </property>
+   <property name="statusTip">
+    <string>Rozpoczyna wyświetlanie na urządzeniu zewnętrznym</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionZako_cz_Wy_wietlanie">
+   <property name="text">
+    <string>Zakończ Wyświetlanie</string>
+   </property>
+   <property name="toolTip">
+    <string>Zakończ Wyświetlanie</string>
+   </property>
+   <property name="statusTip">
+    <string>Przestaje wyświetlać na urządzeniu zewnętrznym</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
