@@ -15,12 +15,12 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
+    <item row="1" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
-      <widget class="QWidget" name="pageStart">
+      <widget class="QWidget" name="pageTitle">
        <widget class="QLabel" name="label">
         <property name="geometry">
          <rect>
@@ -40,6 +40,36 @@
          <bool>true</bool>
         </property>
        </widget>
+      </widget>
+      <widget class="QWidget" name="pageZawodnicy">
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt; font-weight:700;&quot;&gt;Zarządzanie zawodnikami&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLineEdit" name="lineEditWyszukiwanieZawodnikow">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="placeholderText">
+           <string>Szukaj</string>
+          </property>
+          <property name="clearButtonEnabled">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QListWidget" name="listaZawodnikow"/>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
@@ -85,7 +115,7 @@
     <addaction name="separator"/>
     <addaction name="actionRozpocznij_Wyswietlanie"/>
     <addaction name="separator"/>
-    <addaction name="actionZako_cz_Wy_wietlanie"/>
+    <addaction name="actionZakoncz_Wyswietlanie"/>
     <addaction name="separator"/>
    </widget>
    <addaction name="menuWy_wietlanie"/>
@@ -101,7 +131,7 @@
     <string>Nowe Zawody</string>
    </property>
    <property name="statusTip">
-    <string>Tworzy Nowe Zawody</string>
+    <string>Tworzy nowe zawody</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
@@ -115,7 +145,7 @@
     <string>Otwórz Zawody</string>
    </property>
    <property name="statusTip">
-    <string>Otwiera Zapisane Zawody</string>
+    <string>Otwiera zapisane zawody</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
@@ -149,7 +179,7 @@
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
-  <action name="actionZako_cz_Wy_wietlanie">
+  <action name="actionZakoncz_Wyswietlanie">
    <property name="text">
     <string>Zakończ Wyświetlanie</string>
    </property>

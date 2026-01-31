@@ -1,16 +1,16 @@
 import sqlite3
 
-class DatabaseConnection:
+class Database_connection:
     def __init__(self, db_path=None):
-        from Globals import DB_PATH
+        from Globals import Globals
         self.connection = None
-        self.db_path = db_path if db_path is not None else DB_PATH
+        self.db_path = db_path if db_path is not None else Globals.DB_PATH
     def connect(self):
         """Establish a connection to the SQLite database."""
         self.db_path = self.db_path
         try:
             self.connection = sqlite3.connect(self.db_path)
-            print(f"Connected to database at {self.db_path}")
+            print("Connected to database")
         except sqlite3.Error as e:
             print(f"An error occurred while connecting to the database: {e}")
     def disconnect(self):
@@ -51,3 +51,6 @@ class DatabaseConnection:
                 result = None
         self.disconnect()
         return result
+    
+
+

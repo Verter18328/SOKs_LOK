@@ -1,6 +1,6 @@
 import os
 import sys
-from DatabaseConnection import DatabaseConnection
+from DatabaseConnection import Database_connection
 from PySide6.QtUiTools import QUiLoader
 
 
@@ -21,7 +21,7 @@ class Globals:
         )
     }
     def __init__(self):
-        self.database = DatabaseConnection()
+        self.database = Database_connection()
     
     @staticmethod
     def setMainDirectory():

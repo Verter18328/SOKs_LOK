@@ -5,6 +5,7 @@ from PySide6.QtGui import *
 from Globals import Globals
 Globals.setMainDirectory()
 import Resources.resources_rc
+from Signals import Signals
 
 class Operator_Window(QMainWindow):
     def __init__(self):
@@ -14,6 +15,8 @@ class Operator_Window(QMainWindow):
         self.UI = Globals.UI_LOADER.load(Globals.UI_PATHS_DICT['MAIN_WINDOW'])
         self.UI.setWindowTitle(name)
         self.UI.setWindowIcon(QIcon(logo))
+        self.UI.stackedWidget.setCurrentWidget(self.UI.pageTitle)
+        self.signals = Signals(self.UI)
     def show_window(self):
         self.UI.show()
 
