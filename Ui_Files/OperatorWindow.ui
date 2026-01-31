@@ -102,7 +102,7 @@
      <string>Zawodnicy</string>
     </property>
     <addaction name="separator"/>
-    <addaction name="actionZarzadzanie_zawodnikami"/>
+    <addaction name="actionLista_zawodnikow"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuWy_wietlanie">
@@ -151,15 +151,15 @@
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
-  <action name="actionZarzadzanie_zawodnikami">
+  <action name="actionLista_zawodnikow">
    <property name="text">
-    <string>Zarządzanie zawodnikami</string>
+    <string>Lista Zawodników</string>
    </property>
    <property name="toolTip">
-    <string>Zarządzanie zawodnikami</string>
+    <string>Lista Zawodników</string>
    </property>
    <property name="statusTip">
-    <string>Przechodzi do panelu zarządzania zawodnikami</string>
+    <string>Przechodzi do panelu z listą zawodników</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>

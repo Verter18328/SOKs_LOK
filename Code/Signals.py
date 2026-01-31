@@ -14,10 +14,10 @@ class Signals:
         self.UI.exit_To_title_shortcut.activated.connect(self.exit_to_title_triggered)
     def actionZarzadzanie_zawodnikami_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawodnicy)
-        klienci = data_manager.getClients()
-        if klienci is not None:
-            for klient in klienci:
-                imie_nazwisko = f"{klient['imie']} {klient['nazwisko']}"
+        zawodnicy = data_manager.getClients()
+        if zawodnicy is not None:
+            for zawodnik in zawodnicy:
+                imie_nazwisko = f"{zawodnik['imie']} {zawodnik['nazwisko']}"
                 self.UI.listaZawodnikow.addItem(imie_nazwisko)
     def exit_to_title_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageTitle)
