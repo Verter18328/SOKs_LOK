@@ -10,17 +10,17 @@ class Data_manager:
         results = self.database.query(query)
         if results:
             for row in results:
-                klientDict = {
-                    'id': None,
-                    'imie': None,
-                    'nazwisko': None,
-                    'rocznik': None
-                }
-                klientDict['id'] = row[0]
-                klientDict['imie'] = row[1]
-                klientDict['nazwisko'] = row[2]
-                klientDict['rocznik'] = row[3]
-                klienci.append(klientDict)
+                id = row[0]
+                imie = row[1]
+                nazwisko = row[2]
+                rocznik = row[3]
+                setattr(self, f'{imie} {nazwisko}', {
+                    'id': id,
+                    'imie': imie,
+                    'nazwisko': nazwisko,
+                    'rocznik': rocznik
+                })
+                klienci.append(getattr(self, f'{imie} {nazwisko}'))
             return klienci
         else:
             return None

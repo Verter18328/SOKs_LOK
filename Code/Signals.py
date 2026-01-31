@@ -9,13 +9,15 @@ class Signals:
         self.UI = UI
         self.connect_signals()
     def connect_signals(self):
-        self.UI.actionZarzadzanie_zawodnikami.triggered.connect(self.actionZarzadzanie_zawodnikami_triggered)
+        self.UI.actionLista_zawodnikow.triggered.connect(self.actionLista_zawodnikow_triggered)
         self.UI.exit_To_title_shortcut = QShortcut(QKeySequence("Esc"), self.UI)
         self.UI.exit_To_title_shortcut.activated.connect(self.exit_to_title_triggered)
-    def actionZarzadzanie_zawodnikami_triggered(self):
+    def actionLista_zawodnikow_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawodnicy)
         zawodnicy = data_manager.get_clients()
         if zawodnicy is not None:
+            zawodnicy.sort(key=lambda x: (x['nazwisko'], x['imie']))
+            self.UI.listaZawodnikow.clear()
             for zawodnik in zawodnicy:
                 imie_nazwisko = f"{zawodnik['imie']} {zawodnik['nazwisko']}"
                 self.UI.listaZawodnikow.addItem(imie_nazwisko)
