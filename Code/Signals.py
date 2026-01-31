@@ -14,7 +14,7 @@ class Signals:
         self.UI.exit_To_title_shortcut.activated.connect(self.exit_to_title_triggered)
     def actionZarzadzanie_zawodnikami_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawodnicy)
-        zawodnicy = data_manager.getClients()
+        zawodnicy = data_manager.get_clients()
         if zawodnicy is not None:
             for zawodnik in zawodnicy:
                 imie_nazwisko = f"{zawodnik['imie']} {zawodnik['nazwisko']}"
