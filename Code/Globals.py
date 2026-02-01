@@ -36,23 +36,27 @@ class Globals:
             os.path.join(os.path.dirname(__file__), '..', 'Resources', 'logo.jpeg')
         )
     }
-    KONKURENCJE = {
-            'kbks_50m_stojąc_10strz': 'Strzelanie z karabinka bocznego zapłonu 50m w pozycji stojącej - 10 strzałów',
-            'kbks_50m_stojąc_5strz': 'Strzelanie z karabinka bocznego zapłonu 50m w pozycji stojącej - 5 strzałów',
-            'kbks_50m_leżąc_10strz': 'Strzelanie z karabinka bocznego zapłonu 50m w pozycji leżącej - 10 strzałów',
-            'kbks_50m_leżąc_5strz': 'Strzelanie z karabinka bocznego zapłonu 50m w pozycji leżącej - 5 strzałów',
-            'karabinek_pneumatyczny_10m_stojąc_10strz': 'Strzelanie z karabinka pneumatycznego 10m w pozycji stojącej - 10 strzałów',
-            'karabinek_pneumatyczny_10m_stojąc_5strz': 'Strzelanie z karabinka pneumatycznego 10m w pozycji stojącej - 5 strzałów',
-            'pistolet_pneumatyczny_10m_stojąc_10strz': 'Strzelanie z pistoletu pneumatycznego 10m w pozycji stojącej - 10 strzałów',
-            'pistolet_pneumatyczny_10m_stojąc_5strz': 'Strzelanie z pistoletu pneumatycznego 10m w pozycji stojącej - 5 strzałów',
-            'pistolet_bocznyZapłon_25m_stojąc_10strz': 'Strzelanie z pistoletu bocznego zapłonu 25m w pozycji stojącej - 10 strzałów',
-            'pistolet_bocznyZapłon_25m_stojąc_5strz': 'Strzelanie z pistoletu bocznego zapłonu 25m w pozycji stojącej - 5 strzałów',
-            'kbks_50m_zapadki': 'Strzelanie z karabinka bocznego zapłonu 50m do zapadek',
-            'karabinek_pneumatyczny_10m_zapadki': 'Strzelanie z karabinka pneumatycznego 10m do zapadek'
-    }
+    @classmethod
+    def load_competitions(cls):
+        query = "select * from konkurencje"
+        results = cls().database.query(query)
+        if results:
+            for row in results:
+                id = row[0]
+                key = row[1]
+                value = row[2]
+                cls.KONKURENCJE[key] = value
+    
+    KONKURENCJE = {}
+    
     def __init__(self):
         self.database = Database_connection()
     
     @staticmethod
     def setMainDirectory():
         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
+# Automatycznie załaduj konkurencje przy imporcie modułu
+Globals.load_competitions()
+
