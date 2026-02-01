@@ -11,8 +11,11 @@ class Globals:
     PROJECT_NAME = 'SOKs_LOK'
     UI_LOADER = QUiLoader()
     UI_PATHS_DICT = {
-        'MAIN_WINDOW': os.path.abspath(
+        'OPERATOR_WINDOW': os.path.abspath(
             os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'OperatorWindow.ui')
+        ),
+        'NEW_COMPETITION_DIALOG': os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'NoweZawodyDialog.ui')
         )
     }
     RESOURCES_PATHS_DICT = {
@@ -20,6 +23,15 @@ class Globals:
             os.path.join(os.path.dirname(__file__), '..', 'Resources', 'logo.jpeg')
         )
     }
+    KONKURENCJE = [
+            'kbks_50m_stojąc',
+            'kbks_50m_leżąc',
+            'karabinek_pneumatyczny_10m_stojąc',
+            'pistolet_pneumatyczny_10m_stojąc',
+            'pistolet_bocznyZapłon_25m_stojąc',
+            'kbks_50m_zapadki',
+            'karabinek_pneumatyczny_10m_zapadki'
+        ]
     def __init__(self):
         self.database = Database_connection()
     

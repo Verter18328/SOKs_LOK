@@ -5,23 +5,65 @@ from PySide6.QtGui import *
 from Globals import Globals
 Globals.setMainDirectory()
 import Resources.resources_rc
-from Signals import Signals
+from Signals import Signals_operator_window, Signals_new_competition_dialog
+
+class Nowe_zawody_dialog(QDialog):
+    def __init__(self, global_config=None, parent=None):
+        super().__init__(parent)
+        global_config = global_config if global_config is not None else Globals()
+        self.UI = global_config.UI_LOADER.load(global_config.UI_PATHS_DICT['NEW_COMPETITION_DIALOG'])
+        self.UI.setWindowTitle("Stwórz nowe zawody")
+        self.UI.setWindowIcon(QIcon(global_config.RESOURCES_PATHS_DICT['LOGO_IMAGE']))
+        self.KONKURENCJE = global_config.KONKURENCJE
+        self.signals = Signals_new_competition_dialog(self.UI)
+        self.init_konkurencje(self.UI.comboBox_konkurencja1)
+        for konkurencja in self.KONKURENCJE:
+            layout = QHBoxLayout()
+
+            label = QLabel('<b>Konkurencja: </b>')
+            font = label.font()
+            font.setPointSize(12)
+            label.setFont(font)
+
+            comboBox = QComboBox()
+            size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            comboBox.setSizePolicy(size_policy)
+            self.init_konkurencje(comboBox)
+
+            layout.addWidget(label)
+            layout.addWidget(comboBox)
+            self.UI.inputs_layout.addLayout(layout)
+            label.hide()
+            comboBox.hide()
+            setattr(self, f'konkurencja_layout{self.KONKURENCJE.index(konkurencja) + 2}', layout)
+            setattr(self, f'label_{self.KONKURENCJE.index(konkurencja) + 2}', label)
+            setattr(self, f'comboBox_konkurencja{self.KONKURENCJE.index(konkurencja) + 2}', comboBox)
+
+    def init_konkurencje(self, comboBox):
+        comboBox.addItem("Puste")
+        comboBox.addItems(self.KONKURENCJE)
+        
+
+    def show_dialog(self):
+        self.UI.show()
 
 class Operator_Window(QMainWindow):
-    def __init__(self):
+    def __init__(self, global_config=None,):
         super().__init__()
-        name = Globals.PROJECT_NAME
-        logo = Globals.RESOURCES_PATHS_DICT['LOGO_IMAGE']
-        self.UI = Globals.UI_LOADER.load(Globals.UI_PATHS_DICT['MAIN_WINDOW'])
+        global_config = global_config if global_config is not None else Globals()
+        name = global_config.PROJECT_NAME
+        logo = global_config.RESOURCES_PATHS_DICT['LOGO_IMAGE']
+        self.UI = global_config.UI_LOADER.load(global_config.UI_PATHS_DICT['OPERATOR_WINDOW'])
         self.UI.setWindowTitle(name)
         self.UI.setWindowIcon(QIcon(logo))
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageTitle)
-        self.signals = Signals(self.UI)
+        self.signals = Signals_operator_window(self.UI)
     def show_window(self):
         self.UI.show()
 
 
-app = QApplication(sys.argv)
-window = Operator_Window()
-window.show_window()
-sys.exit(app.exec())
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = Operator_Window()
+    window.show_window()
+    sys.exit(app.exec())

@@ -1,6 +1,11 @@
 from Globals import Globals
 Globals.setMainDirectory()
 
+class New_zawody:
+    def __init__(self):
+        pass
+
+
 class Data_manager:
     def __init__(self, db=None):
         self.database = db if db is not None else Globals().database

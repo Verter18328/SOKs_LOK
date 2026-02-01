@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>967</width>
-    <height>779</height>
+    <height>773</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -92,7 +92,7 @@
      <string>Zawody</string>
     </property>
     <addaction name="separator"/>
-    <addaction name="actionNowe_Zawody_Create"/>
+    <addaction name="actionNowe_zawody"/>
     <addaction name="separator"/>
     <addaction name="actionOtworz_Zawody"/>
     <addaction name="separator"/>
@@ -123,7 +123,7 @@
    <addaction name="menuZawodnicy"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="actionNowe_Zawody_Create">
+  <action name="actionNowe_zawody">
    <property name="text">
     <string>Nowe Zawody</string>
    </property>
@@ -159,7 +159,7 @@
     <string>Lista Zawodników</string>
    </property>
    <property name="statusTip">
-    <string>Przechodzi do panelu z listą zawodników</string>
+    <string>Przechodzi do panelu z listą wszystkich zawodników</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
