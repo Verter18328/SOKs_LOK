@@ -20,6 +20,15 @@ class Globals:
         ),
         'NEW_COMPETITION_DIALOG': os.path.abspath(
             os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'NoweZawodyDialog.ui')
+        ),
+        '5_SHOOTS_TABLE': os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'Tabelka5Strzałów.ui')
+        ),
+        '10_SHOOTS_TABLE': os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'Tabelka10Strzałów.ui')
+        ),
+        'ZAPADKI_TABLE': os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'TabelkaZapadki.ui')
         )
     }
     RESOURCES_PATHS_DICT = {
@@ -28,11 +37,16 @@ class Globals:
         )
     }
     KONKURENCJE = {
-            'kbks_50m_stojąc': 'Strzelanie z karabinka bocznego zapłonu 50m w pozycji stojącej',
-            'kbks_50m_leżąc': 'Strzelanie z karabinka bocznego zapłonu 50m w pozycji leżącej',
-            'karabinek_pneumatyczny_10m_stojąc': 'Strzelanie z karabinka pneumatycznego 10m w pozycji stojącej',
-            'pistolet_pneumatyczny_10m_stojąc': 'Strzelanie z pistoletu pneumatycznego 10m w pozycji stojącej',
-            'pistolet_bocznyZapłon_25m_stojąc': 'Strzelanie z pistoletu bocznego zapłonu 25m w pozycji stojącej',
+            'kbks_50m_stojąc_10strz': 'Strzelanie z karabinka bocznego zapłonu 50m w pozycji stojącej - 10 strzałów',
+            'kbks_50m_stojąc_5strz': 'Strzelanie z karabinka bocznego zapłonu 50m w pozycji stojącej - 5 strzałów',
+            'kbks_50m_leżąc_10strz': 'Strzelanie z karabinka bocznego zapłonu 50m w pozycji leżącej - 10 strzałów',
+            'kbks_50m_leżąc_5strz': 'Strzelanie z karabinka bocznego zapłonu 50m w pozycji leżącej - 5 strzałów',
+            'karabinek_pneumatyczny_10m_stojąc_10strz': 'Strzelanie z karabinka pneumatycznego 10m w pozycji stojącej - 10 strzałów',
+            'karabinek_pneumatyczny_10m_stojąc_5strz': 'Strzelanie z karabinka pneumatycznego 10m w pozycji stojącej - 5 strzałów',
+            'pistolet_pneumatyczny_10m_stojąc_10strz': 'Strzelanie z pistoletu pneumatycznego 10m w pozycji stojącej - 10 strzałów',
+            'pistolet_pneumatyczny_10m_stojąc_5strz': 'Strzelanie z pistoletu pneumatycznego 10m w pozycji stojącej - 5 strzałów',
+            'pistolet_bocznyZapłon_25m_stojąc_10strz': 'Strzelanie z pistoletu bocznego zapłonu 25m w pozycji stojącej - 10 strzałów',
+            'pistolet_bocznyZapłon_25m_stojąc_5strz': 'Strzelanie z pistoletu bocznego zapłonu 25m w pozycji stojącej - 5 strzałów',
             'kbks_50m_zapadki': 'Strzelanie z karabinka bocznego zapłonu 50m do zapadek',
             'karabinek_pneumatyczny_10m_zapadki': 'Strzelanie z karabinka pneumatycznego 10m do zapadek'
     }

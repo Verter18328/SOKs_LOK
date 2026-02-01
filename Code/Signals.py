@@ -2,7 +2,7 @@ from Globals import Globals
 Globals.setMainDirectory()
 from PySide6.QtGui import QShortcut
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QHeaderView
 from DataManager import data_manager
 from DataValidation import New_zawody_data_validation
 
@@ -53,6 +53,7 @@ class Signals_new_competition_dialog:
         if is_valid:
             # Tutaj można dodać kod do zapisania nowych zawodów do bazy danych
             self.UI.close()
+            # Tutaj powinno się otwierać działanie związane z nowo utworzonymi zawodami w oknie głównym
         else:
             QMessageBox.warning(self.UI, "Błędne dane", message)
 
@@ -66,6 +67,8 @@ class Signals_operator_window:
         self.UI.exit_To_title_shortcut = QShortcut(QKeySequence("Esc"), self.UI)
         self.UI.exit_To_title_shortcut.activated.connect(self.exit_to_title_triggered)
         self.UI.actionNowe_zawody.triggered.connect(self.actionNowe_zawody_triggered)
+        self.UI.Test_shortcut = QShortcut(QKeySequence("F2"), self.UI)
+        self.UI.Test_shortcut.activated.connect(self.test_shortcut_triggered)
     def actionLista_zawodnikow_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawodnicy)
         zawodnicy = data_manager.get_clients()
@@ -81,3 +84,11 @@ class Signals_operator_window:
         from OperatorUI_Handler import Nowe_zawody_dialog
         dialog = Nowe_zawody_dialog(parent=self.UI)
         dialog.show_dialog()
+    def test_shortcut_triggered(self):
+        # Testowa funkcja do przełączania na zakładkę zarządzania zawodami z przykładową tabelą
+        self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawody_managment)
+        tabWidget = self.UI.tabWidget_zawody
+        tabWidget.clear()
+        newTab = Globals.UI_LOADER.load(Globals.UI_PATHS_DICT['5_SHOOTS_TABLE'])
+        newTab.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        tabWidget.addTab(newTab, "Testowe Zawody")
