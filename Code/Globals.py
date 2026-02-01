@@ -2,9 +2,13 @@ import os
 import sys
 from DatabaseConnection import Database_connection
 from PySide6.QtUiTools import QUiLoader
+import datetime
 
 
 class Globals:
+    DATE_FORMAT = '%d-%m-%Y'
+    TIME_FORMAT = '%H:%M:%S'
+    TODAY_DATE = datetime.datetime.now().strftime(DATE_FORMAT)
     DB_PATH = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'Database_Files', 'Database.db')
     )
