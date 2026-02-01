@@ -87,7 +87,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="lineEdit">
+        <widget class="QLineEdit" name="lineEdit_nazwa">
          <property name="placeholderText">
           <string>Wpisz nazwę zawodów</string>
          </property>

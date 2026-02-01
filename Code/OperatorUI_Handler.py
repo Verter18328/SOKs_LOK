@@ -15,9 +15,8 @@ class Nowe_zawody_dialog(QDialog):
         self.UI.setWindowTitle("Stwórz nowe zawody")
         self.UI.setWindowIcon(QIcon(global_config.RESOURCES_PATHS_DICT['LOGO_IMAGE']))
         self.KONKURENCJE = global_config.KONKURENCJE
-        self.signals = Signals_new_competition_dialog(self.UI)
         self.init_konkurencje(self.UI.comboBox_konkurencja1)
-        for konkurencja in self.KONKURENCJE:
+        for i in range(len(self.KONKURENCJE) - 1):
             layout = QHBoxLayout()
 
             label = QLabel('<b>Konkurencja: </b>')
@@ -35,13 +34,15 @@ class Nowe_zawody_dialog(QDialog):
             self.UI.inputs_layout.addLayout(layout)
             label.hide()
             comboBox.hide()
-            setattr(self, f'konkurencja_layout{self.KONKURENCJE.index(konkurencja) + 2}', layout)
-            setattr(self, f'label_{self.KONKURENCJE.index(konkurencja) + 2}', label)
-            setattr(self, f'comboBox_konkurencja{self.KONKURENCJE.index(konkurencja) + 2}', comboBox)
+            setattr(self.UI, f'konkurencja_layout{i + 2}', layout)
+            setattr(self.UI, f'label_{i + 2}', label)
+            setattr(self.UI, f'comboBox_konkurencja{i + 2}', comboBox)
+        self.signals = Signals_new_competition_dialog(self.UI)
+
 
     def init_konkurencje(self, comboBox):
         comboBox.addItem("Puste")
-        comboBox.addItems(self.KONKURENCJE)
+        comboBox.addItems(list(self.KONKURENCJE.values()))
         
 
     def show_dialog(self):

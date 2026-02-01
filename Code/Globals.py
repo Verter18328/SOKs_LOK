@@ -23,15 +23,15 @@ class Globals:
             os.path.join(os.path.dirname(__file__), '..', 'Resources', 'logo.jpeg')
         )
     }
-    KONKURENCJE = [
-            'kbks_50m_stojąc',
-            'kbks_50m_leżąc',
-            'karabinek_pneumatyczny_10m_stojąc',
-            'pistolet_pneumatyczny_10m_stojąc',
-            'pistolet_bocznyZapłon_25m_stojąc',
-            'kbks_50m_zapadki',
-            'karabinek_pneumatyczny_10m_zapadki'
-        ]
+    KONKURENCJE = {
+            'kbks_50m_stojąc': 'Strzelanie z karabinka bocznego zapłonu 50m w pozycji stojącej',
+            'kbks_50m_leżąc': 'Strzelanie z karabinka bocznego zapłonu 50m w pozycji leżącej',
+            'karabinek_pneumatyczny_10m_stojąc': 'Strzelanie z karabinka pneumatycznego 10m w pozycji stojącej',
+            'pistolet_pneumatyczny_10m_stojąc': 'Strzelanie z pistoletu pneumatycznego 10m w pozycji stojącej',
+            'pistolet_bocznyZapłon_25m_stojąc': 'Strzelanie z pistoletu bocznego zapłonu 25m w pozycji stojącej',
+            'kbks_50m_zapadki': 'Strzelanie z karabinka bocznego zapłonu 50m do zapadek',
+            'karabinek_pneumatyczny_10m_zapadki': 'Strzelanie z karabinka pneumatycznego 10m do zapadek'
+    }
     def __init__(self):
         self.database = Database_connection()
     
