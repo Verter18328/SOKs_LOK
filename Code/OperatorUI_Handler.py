@@ -1,3 +1,4 @@
+import datetime
 import sys
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
@@ -37,6 +38,11 @@ class Nowe_zawody_dialog(QDialog):
             setattr(self.UI, f'konkurencja_layout{i + 2}', layout)
             setattr(self.UI, f'label_{i + 2}', label)
             setattr(self.UI, f'comboBox_konkurencja{i + 2}', comboBox)
+
+            
+        timestamp = QDateTime.currentDateTime()
+        self.UI.dateTime_input.setDateTime(timestamp)
+        self.UI.dateTime_input.setMinimumDateTime(timestamp)
         self.signals = Signals_new_competition_dialog(self.UI)
 
 

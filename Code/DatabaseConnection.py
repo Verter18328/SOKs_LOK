@@ -42,6 +42,13 @@ class Database_connection:
         first_word = query.strip().split()[0].upper()
         if first_word == "SELECT":
             result = cursor.fetchall()
+        elif first_word == "INSERT":
+            try:
+                self.connection.commit()
+                result = cursor.lastrowid
+            except sqlite3.Error as e:
+                print(f"An error occurred while committing the transaction: {e}")
+                result = None
         else:
             try:
                 self.connection.commit()
@@ -51,6 +58,22 @@ class Database_connection:
                 result = None
         self.disconnect()
         return result
+    
+    def get_last_inserted_id(self):
+        """Get the ID of the last inserted row."""
+        self.connect()
+        if not self.connection:
+            print("No active database connection")
+            return None
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute("SELECT last_insert_rowid()")
+            last_id = cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"An error occurred while retrieving the last inserted ID: {e}")
+            last_id = None
+        self.disconnect()
+        return last_id
     
 
 

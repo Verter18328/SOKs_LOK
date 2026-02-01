@@ -6,8 +6,9 @@ import datetime
 
 
 class Globals:
-    DATE_FORMAT = '%d-%m-%Y'
+    DATE_FORMAT = '%d/%m/%Y'
     TIME_FORMAT = '%H:%M:%S'
+    TIMESTAMP_FORMAT = '%H:%M %d/%m/%Y'
     TODAY_DATE = datetime.datetime.now().strftime(DATE_FORMAT)
     DB_PATH = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'Database_Files', 'Database.db')
@@ -38,7 +39,7 @@ class Globals:
     }
     @classmethod
     def load_competitions(cls):
-        query = "select * from konkurencje"
+        query = "select * from konkurencje_lista"
         results = cls().database.query(query)
         if results:
             for row in results:
@@ -55,8 +56,10 @@ class Globals:
     @staticmethod
     def setMainDirectory():
         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    
 
 
 # Automatycznie załaduj konkurencje przy imporcie modułu
 Globals.load_competitions()
+
 

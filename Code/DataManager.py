@@ -2,11 +2,39 @@ from Globals import Globals
 Globals.setMainDirectory()
 
 class New_zawody:
-    def __init__(self):
-        pass
+    def __init__(self, nazwa, dateTime, konkurencje, db=None, data_manager=None):
+        self.zawody_data_manager = data_manager if data_manager is not None else zawody_data_manager
+        self.database = db if db is not None else Globals().database
+        self.nazwa = nazwa
+        self.dateTime = dateTime
+        self.konkurencje = konkurencje
+        result = self.insery_into_zawody_lista()
+        if result[0]:
+            self.id_zawodow = result[1]
+            self.assign_zawody_to_konkurencje()
+        else:
+            print("Error inserting new event into database")
+    def insery_into_zawody_lista(self):
+        query = "INSERT INTO zawody_lista (nazwa, data, godzina) VALUES (?, ?, ?)"
+        params = (self.nazwa, self.dateTime.split(' ')[1], self.dateTime.split(' ')[0])
+        result = self.database.query(query, params)
+        if result:
+            return True, result
+        else:
+            return False, None
+    def assign_zawody_to_konkurencje(self):
+        for konkurencja in self.konkurencje:
+            konkurencja_id = self.zawody_data_manager.get_competition_id_by_name(konkurencja)
+            query = "INSERT INTO zawody_konkurencje_link (id_zawodow, id_konkurencji) VALUES (?, ?)"
+            params = (self.id_zawodow, konkurencja_id)
+            result = self.database.query(query, params)
+            if result is None:
+                print(f"Error inserting competition {konkurencja} for event {self.nazwa}")
 
 
-class Data_manager:
+
+
+class Client_data_manager:
     def __init__(self, db=None):
         self.database = db if db is not None else Globals().database
     def get_clients(self):
@@ -48,4 +76,18 @@ class Data_manager:
             return None
         
 
-data_manager = Data_manager()
+class Zawody_data_manager:
+    def __init__(self, db=None):
+        self.database = db if db is not None else Globals().database
+    def get_competition_id_by_name(self, nazwa):
+        query = "SELECT id FROM konkurencje_lista WHERE nazwa_log = ?"
+        params = (nazwa,)
+        results = self.database.query(query, params)
+        if results:
+            return results[0][0]
+        else:
+            return None
+            
+        
+zawody_data_manager = Zawody_data_manager()
+client_data_manager = Client_data_manager()

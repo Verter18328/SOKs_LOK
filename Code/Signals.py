@@ -3,7 +3,7 @@ Globals.setMainDirectory()
 from PySide6.QtGui import QShortcut
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QMessageBox, QHeaderView
-from DataManager import data_manager
+from DataManager import client_data_manager, New_zawody
 from DataValidation import New_zawody_data_validation
 
 
@@ -40,6 +40,7 @@ class Signals_new_competition_dialog:
                 pass
     def accepted(self):
         selected_nazwa = self.UI.lineEdit_nazwa.text()
+        selected_dateTime = self.UI.dateTime_input.dateTime().toString('HH:mm dd/MM/yyyy')
         selected_konkurencje = []
         for comboBox_number in range(1, len(self.KONKURENCJE) + 1):
             comboBox = getattr(self.UI, f'comboBox_konkurencja{comboBox_number}')
@@ -48,10 +49,11 @@ class Signals_new_competition_dialog:
                 for key, value in self.KONKURENCJE.items():
                     if value == selected_text:
                         selected_konkurencje.append(key)
-        validator = New_zawody_data_validation(selected_nazwa, selected_konkurencje)
+        validator = New_zawody_data_validation(selected_nazwa, selected_dateTime, selected_konkurencje)
         is_valid, message = validator.is_valid_result
         if is_valid:
             # Tutaj można dodać kod do zapisania nowych zawodów do bazy danych
+            setattr(self, f'zawody_{selected_nazwa}', New_zawody(selected_nazwa, selected_dateTime, selected_konkurencje))
             self.UI.close()
             # Tutaj powinno się otwierać działanie związane z nowo utworzonymi zawodami w oknie głównym
         else:
@@ -71,7 +73,7 @@ class Signals_operator_window:
         self.UI.Test_shortcut.activated.connect(self.test_shortcut_triggered)
     def actionLista_zawodnikow_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawodnicy)
-        zawodnicy = data_manager.get_clients()
+        zawodnicy = client_data_manager.get_clients()
         if zawodnicy is not None:
             zawodnicy.sort(key=lambda x: (x['nazwisko'], x['imie']))
             self.UI.listaZawodnikow.clear()
