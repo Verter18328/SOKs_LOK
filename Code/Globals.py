@@ -61,6 +61,5 @@ class Globals:
 
 # Automatycznie załaduj konkurencje przy imporcie modułu
 Globals.load_competitions()
-# Globals.swap_third_and_forth_elements()  # Wywołaj tylko raz ręcznie gdy potrzebujesz
 
 

@@ -2,14 +2,17 @@ from Globals import Globals
 Globals.setMainDirectory()
 from PySide6.QtGui import QShortcut
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import QMessageBox, QHeaderView, QWidget
-from PySide6.QtCore import Qt
-from DataManager import client_data_manager, New_zawody
+from PySide6.QtWidgets import QMessageBox, QHeaderView, QWidget, QListWidgetItem, QMenu
+from PySide6.QtCore import Qt, Signal, QObject
+from DataManager import client_data_manager, zawody_data_manager, New_zawody
 from DataValidation import New_zawody_data_validation
 
 
-class Signals_new_competition_dialog:
+class Signals_new_competition_dialog(QObject):
+    zawody_created = Signal(object)  # Sygnał przekazujący obiekt New_zawody
+    
     def __init__(self, UI, parent_window=None):
+        super().__init__()
         self.UI = UI
         self.parent_window = parent_window
         self.KONKURENCJE = Globals.KONKURENCJE
@@ -55,12 +58,11 @@ class Signals_new_competition_dialog:
         is_valid, message = validator.is_valid_result
         if is_valid:
             # Tutaj można dodać kod do zapisania nowych zawodów do bazy danych
-            setattr(self, f'zawody_{selected_nazwa}', New_zawody(selected_nazwa, selected_dateTime, selected_konkurencje))
+            zawody_obj = New_zawody(selected_nazwa, selected_dateTime, selected_konkurencje)
+            setattr(self, f'zawody_{selected_nazwa}', zawody_obj)
             self.UI.close()
-            # Tutaj powinno się otwierać działanie związane z nowo utworzonymi zawodami w oknie głównym
-            if self.parent_window:
-                self.parent_window.pageZawody_managment.zawody_data = getattr(self, f'zawody_{selected_nazwa}')
-                self.parent_window.stackedWidget.setCurrentWidget(self.parent_window.pageZawody_managment)
+            # Emituj sygnał z obiektom zawodów
+            self.zawody_created.emit(zawody_obj)
         else:
             QMessageBox.warning(self.UI, "Błędne dane", message)
 
@@ -74,19 +76,14 @@ class Signals_operator_window:
         self.UI.exit_To_title_shortcut = QShortcut(QKeySequence("Esc"), self.UI)
         self.UI.exit_To_title_shortcut.activated.connect(self.exit_to_title_triggered)
         self.UI.actionNowe_zawody.triggered.connect(self.actionNowe_zawody_triggered)
-        self.UI.Test_shortcut = QShortcut(QKeySequence("F2"), self.UI)
-        self.UI.Test_shortcut.activated.connect(self.test_shortcut_triggered)
-        self.UI.stackedWidget.currentChanged.connect(self.stackedWidget_currentChanged)
-    def stackedWidget_currentChanged(self, index):
-        # Sprawdź, czy zmieniono na konkretną stronę
-        current_widget = self.UI.stackedWidget.currentWidget()
-        
-        if current_widget == self.UI.pageZawodnicy:
-            # Kod do wykonania przy zmianie na stronę zawodników
-            pass
-        elif current_widget == self.UI.pageZawody_managment:
-            self.zawody_managment_page_entered()
-        # Dodaj więcej warunków dla innych stron jeśli potrzeba
+        self.UI.actionOtworz_zawody.triggered.connect(self.otworz_zawody_triggered)
+    
+    def on_zawody_created(self, zawody_obj):
+        # Obsługa sygnału po utworzeniu nowych zawodów
+        self.UI.pageZawody_managment.zawody_data = zawody_obj
+        self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawody_managment)
+        self.UI.tabWidget_zawody.clear()
+        self.zawody_managment_page_entered()
             
     def actionLista_zawodnikow_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawodnicy)
@@ -102,21 +99,31 @@ class Signals_operator_window:
     def actionNowe_zawody_triggered(self):
         from OperatorUI_Handler import Nowe_zawody_dialog
         dialog = Nowe_zawody_dialog(parent=self.UI)
+        # Podłącz sygnał z dialogu
+        dialog.signals.zawody_created.connect(self.on_zawody_created)
         dialog.show_dialog()
-    def test_shortcut_triggered(self):
-        # Testowa funkcja do przełączania na zakładkę zarządzania zawodami z przykładową tabelą
-        self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawody_managment)
-        tabWidget = self.UI.tabWidget_zawody
-        tabWidget.clear()
-        newTab = Globals.UI_LOADER.load(Globals.UI_PATHS_DICT['5_SHOOTS_TABLE'])
-        newTab.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        tabWidget.addTab(newTab, "Testowe Zawody")
     def zawody_managment_page_entered(self):
         zawody = getattr(self.UI.pageZawody_managment, 'zawody_data', None)
         if not zawody:
             return
+        zawody_name = zawody.nazwa
+        font = self.UI.label_zawody_nazwa.font()
+        font.setPointSize(16)
+        self.UI.label_zawody_nazwa.setFont(font)
+        self.UI.label_zawody_nazwa.setText(f"<b>{zawody_name}</b>")
         for konkurencja in zawody.konkurencje_ids_dict.keys():
-            tab_name = Globals.KONKURENCJE[konkurencja]
+            tab_name = konkurencja.split('_')[0]
+            match tab_name:
+                case 'kbks':
+                    tab_name = 'KBKS'
+                case 'karabinekPneumatyczny':
+                    tab_name = 'Karabinek Pneumatyczny'
+                case 'pistoletPneumatyczny':
+                    tab_name = 'Pistolet Pneumatyczny'
+                case 'pistoletBocznyZapłon':
+                    tab_name = 'Pistolet Boczny Zapłon'
+                case _:
+                    pass  # Pozostaw oryginalną nazwę, jeśli nie pasuje do żadnego przypadku
             ilosc_strzalow = konkurencja.split('_')[2]
             match ilosc_strzalow:
                 case '5strz':
@@ -132,4 +139,32 @@ class Signals_operator_window:
             newTab = Globals.UI_LOADER.load(ui_path)
             newTab.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
             tabWidget.addTab(newTab, tab_name)
+    def otworz_zawody_triggered(self):
+        self.UI.stackedWidget.setCurrentWidget(self.UI.pageLista_zawodow)
+        listWidget = self.UI.listWidget_lista_zawodow
+        listWidget.clear()
+        lista_zawodow = zawody_data_manager.get_all_zawody()
+        for zawody in lista_zawodow:
+            id = zawody['id']
+            nazwa = zawody['nazwa']
+            data = zawody['data']
+            list_item_text = f"{nazwa} - {data}"
+            item = QListWidgetItem(list_item_text)
+            item.setData(Qt.UserRole, id)  # Przechowuj ID zawodów w danych użytkownika
+            listWidget.addItem(item)
+        
+        # Inicjalizuj context menu jeśli jeszcze nie istnieje
+        if not hasattr(self, 'lista_zawodow_menu'):
+            from ContextMenus import lista_zawodow_context_menu
+            self.lista_zawodow_menu = lista_zawodow_context_menu(self.UI)
+            self.lista_zawodow_menu.zawody_selected.connect(self.on_zawody_selected)
+    
+    def on_zawody_selected(self, zawody_obj):
+        # Obsługa otwierania zawodów z listy
+        self.UI.pageZawody_managment.zawody_data = zawody_obj
+        self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawody_managment)
+        self.UI.tabWidget_zawody.clear()
+        self.zawody_managment_page_entered()
+
+
             

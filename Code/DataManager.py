@@ -35,6 +35,18 @@ class New_zawody:
                 print(f"Error inserting competition {konkurencja} for event {self.nazwa}")
 
 
+class Loaded_zawody:
+    """Klasa do reprezentacji zawodów wczytanych z bazy danych (nie tworzy nowych rekordów)"""
+    def __init__(self, id_zawodow, nazwa, dateTime, konkurencje, db=None, data_manager=None):
+        self.zawody_data_manager = data_manager if data_manager is not None else zawody_data_manager
+        self.database = db if db is not None else Globals().database
+        self.id_zawodow = id_zawodow
+        self.nazwa = nazwa
+        self.dateTime = dateTime
+        self.konkurencje_ids_dict = {
+            konkurencja: self.zawody_data_manager.get_competition_id_by_name(konkurencja)
+            for konkurencja in konkurencje
+        }
 
 
 class Client_data_manager:
@@ -88,6 +100,50 @@ class Zawody_data_manager:
         results = self.database.query(query, params)
         if results:
             return results[0][0]
+        else:
+            return None
+    
+    def get_zawody_by_id(self, id_zawodow):
+        # Pobierz podstawowe dane zawodów
+        query = "SELECT nazwa, data, godzina FROM zawody_lista WHERE id = ?"
+        params = (id_zawodow,)
+        result = self.database.query(query, params)
+        if not result:
+            return None
+        
+        nazwa, data, godzina = result[0]
+        dateTime = f"{godzina} {data}"
+        
+        # Pobierz konkurencje związane z zawodami
+        query_konkurencje = """
+            SELECT kl.nazwa_log 
+            FROM konkurencje_lista kl
+            JOIN zawody_konkurencje_link zkl ON kl.id = zkl.id_konkurencji
+            WHERE zkl.id_zawodow = ?
+        """
+        konkurencje_results = self.database.query(query_konkurencje, params)
+        konkurencje = [row[0] for row in konkurencje_results] if konkurencje_results else []
+        
+        # Utwórz obiekt zawodów (bez wstawiania do bazy)
+        from DataManager import Loaded_zawody
+        return Loaded_zawody(id_zawodow, nazwa, dateTime, konkurencje, db=self.database, data_manager=self)
+    def get_all_zawody(self):
+        query = "SELECT * FROM zawody_lista"
+        results = self.database.query(query)
+        zawody_list = []
+        if results:
+            for row in results:
+                id = row[0]
+                nazwa = row[1]
+                data = row[2]
+                godzina = row[3]
+                zawody_list.append({
+                    'id': id,
+                    'nazwa': nazwa,
+                    'data': data,
+                    'godzina': godzina
+                })
+            return zawody_list
         else:
             return None
             

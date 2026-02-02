@@ -21,7 +21,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="0">
+    <item row="0" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -33,25 +33,21 @@
        <number>2</number>
       </property>
       <widget class="QWidget" name="pageTitle">
-       <widget class="QLabel" name="label">
-        <property name="geometry">
-         <rect>
-          <x>290</x>
-          <y>220</y>
-          <width>321</width>
-          <height>241</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap resource="../Resources/resources.qrc">:/images/logo.jpeg</pixmap>
-        </property>
-        <property name="scaledContents">
-         <bool>true</bool>
-        </property>
-       </widget>
+       <layout class="QGridLayout" name="gridLayout_4">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="pixmap">
+           <pixmap resource="../Resources/resources.qrc">:/images/logo.jpeg</pixmap>
+          </property>
+          <property name="scaledContents">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="pageZawodnicy">
        <layout class="QGridLayout" name="gridLayout_2">
@@ -85,17 +81,27 @@
       </widget>
       <widget class="QWidget" name="pageZawody_managment">
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_3">
+        <item row="2" column="1">
+         <widget class="QPushButton" name="button_dodaj_wynik">
           <property name="text">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt; font-weight:700;&quot;&gt;Nazwa zawodów&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
+           <string>Dodaj Wynik</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
+        <item row="2" column="0">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="0" colspan="2">
          <widget class="QTabWidget" name="tabWidget_zawody">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -107,6 +113,30 @@
            <number>-1</number>
           </property>
          </widget>
+        </item>
+        <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="label_zawody_nazwa">
+          <property name="text">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt; font-weight:700;&quot;&gt;Nazwa zawodów&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="pageLista_zawodow">
+       <layout class="QGridLayout" name="gridLayout_5">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:16pt; font-weight:700;&quot;&gt;Lista Zawodów&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QListWidget" name="listWidget_lista_zawodow"/>
         </item>
        </layout>
       </widget>
@@ -133,7 +163,7 @@
     <addaction name="separator"/>
     <addaction name="actionNowe_zawody"/>
     <addaction name="separator"/>
-    <addaction name="actionOtworz_Zawody"/>
+    <addaction name="actionOtworz_zawody"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuZawodnicy">
@@ -152,9 +182,9 @@
      <bool>false</bool>
     </property>
     <addaction name="separator"/>
-    <addaction name="actionRozpocznij_Wyswietlanie"/>
+    <addaction name="actionRozpocznij_wyswietlanie"/>
     <addaction name="separator"/>
-    <addaction name="actionZakoncz_Wyswietlanie"/>
+    <addaction name="actionZakoncz_wyswietlanie"/>
     <addaction name="separator"/>
    </widget>
    <addaction name="menuWy_wietlanie"/>
@@ -176,7 +206,7 @@
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
-  <action name="actionOtworz_Zawody">
+  <action name="actionOtworz_zawody">
    <property name="text">
     <string>Otwórz Zawody</string>
    </property>
@@ -204,7 +234,7 @@
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
-  <action name="actionRozpocznij_Wyswietlanie">
+  <action name="actionRozpocznij_wyswietlanie">
    <property name="text">
     <string>Rozpocznij Wyświetlanie</string>
    </property>
@@ -218,7 +248,7 @@
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
-  <action name="actionZakoncz_Wyswietlanie">
+  <action name="actionZakoncz_wyswietlanie">
    <property name="text">
     <string>Zakończ Wyświetlanie</string>
    </property>
