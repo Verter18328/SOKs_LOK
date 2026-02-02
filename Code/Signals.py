@@ -2,14 +2,16 @@ from Globals import Globals
 Globals.setMainDirectory()
 from PySide6.QtGui import QShortcut
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import QMessageBox, QHeaderView
+from PySide6.QtWidgets import QMessageBox, QHeaderView, QWidget
+from PySide6.QtCore import Qt
 from DataManager import client_data_manager, New_zawody
 from DataValidation import New_zawody_data_validation
 
 
 class Signals_new_competition_dialog:
-    def __init__(self, UI):
+    def __init__(self, UI, parent_window=None):
         self.UI = UI
+        self.parent_window = parent_window
         self.KONKURENCJE = Globals.KONKURENCJE
         self.connect_signals()
     def connect_signals(self):
@@ -56,6 +58,9 @@ class Signals_new_competition_dialog:
             setattr(self, f'zawody_{selected_nazwa}', New_zawody(selected_nazwa, selected_dateTime, selected_konkurencje))
             self.UI.close()
             # Tutaj powinno się otwierać działanie związane z nowo utworzonymi zawodami w oknie głównym
+            if self.parent_window:
+                self.parent_window.pageZawody_managment.zawody_data = getattr(self, f'zawody_{selected_nazwa}')
+                self.parent_window.stackedWidget.setCurrentWidget(self.parent_window.pageZawody_managment)
         else:
             QMessageBox.warning(self.UI, "Błędne dane", message)
 
@@ -71,6 +76,18 @@ class Signals_operator_window:
         self.UI.actionNowe_zawody.triggered.connect(self.actionNowe_zawody_triggered)
         self.UI.Test_shortcut = QShortcut(QKeySequence("F2"), self.UI)
         self.UI.Test_shortcut.activated.connect(self.test_shortcut_triggered)
+        self.UI.stackedWidget.currentChanged.connect(self.stackedWidget_currentChanged)
+    def stackedWidget_currentChanged(self, index):
+        # Sprawdź, czy zmieniono na konkretną stronę
+        current_widget = self.UI.stackedWidget.currentWidget()
+        
+        if current_widget == self.UI.pageZawodnicy:
+            # Kod do wykonania przy zmianie na stronę zawodników
+            pass
+        elif current_widget == self.UI.pageZawody_managment:
+            self.zawody_managment_page_entered()
+        # Dodaj więcej warunków dla innych stron jeśli potrzeba
+            
     def actionLista_zawodnikow_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawodnicy)
         zawodnicy = client_data_manager.get_clients()
@@ -94,3 +111,25 @@ class Signals_operator_window:
         newTab = Globals.UI_LOADER.load(Globals.UI_PATHS_DICT['5_SHOOTS_TABLE'])
         newTab.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         tabWidget.addTab(newTab, "Testowe Zawody")
+    def zawody_managment_page_entered(self):
+        zawody = getattr(self.UI.pageZawody_managment, 'zawody_data', None)
+        if not zawody:
+            return
+        for konkurencja in zawody.konkurencje_ids_dict.keys():
+            tab_name = Globals.KONKURENCJE[konkurencja]
+            ilosc_strzalow = konkurencja.split('_')[2]
+            match ilosc_strzalow:
+                case '5strz':
+                    ui_path = Globals.UI_PATHS_DICT['5_SHOOTS_TABLE']
+                case '10strz':
+                    ui_path = Globals.UI_PATHS_DICT['10_SHOOTS_TABLE']
+                case 'zapadki':
+                    ui_path = Globals.UI_PATHS_DICT['ZAPADKI_TABLE']
+                case _:
+                    print(f"Unknown competition type: {ilosc_strzalow}")
+                    continue  # Pomijaj nieznane konkurencje
+            tabWidget = self.UI.tabWidget_zawody
+            newTab = Globals.UI_LOADER.load(ui_path)
+            newTab.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            tabWidget.addTab(newTab, tab_name)
+            

@@ -7,7 +7,10 @@ class New_zawody:
         self.database = db if db is not None else Globals().database
         self.nazwa = nazwa
         self.dateTime = dateTime
-        self.konkurencje = konkurencje
+        self.konkurencje_ids_dict = {
+            konkurencja: self.zawody_data_manager.get_competition_id_by_name(konkurencja)
+            for konkurencja in konkurencje
+        }
         result = self.insery_into_zawody_lista()
         if result[0]:
             self.id_zawodow = result[1]
@@ -23,8 +26,8 @@ class New_zawody:
         else:
             return False, None
     def assign_zawody_to_konkurencje(self):
-        for konkurencja in self.konkurencje:
-            konkurencja_id = self.zawody_data_manager.get_competition_id_by_name(konkurencja)
+        for konkurencja in self.konkurencje_ids_dict.keys():
+            konkurencja_id = self.konkurencje_ids_dict.get(konkurencja)
             query = "INSERT INTO zawody_konkurencje_link (id_zawodow, id_konkurencji) VALUES (?, ?)"
             params = (self.id_zawodow, konkurencja_id)
             result = self.database.query(query, params)

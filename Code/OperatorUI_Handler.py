@@ -43,7 +43,8 @@ class Nowe_zawody_dialog(QDialog):
         timestamp = QDateTime.currentDateTime()
         self.UI.dateTime_input.setDateTime(timestamp)
         self.UI.dateTime_input.setMinimumDateTime(timestamp)
-        self.signals = Signals_new_competition_dialog(self.UI)
+        self.parent_window = parent
+        self.signals = Signals_new_competition_dialog(self.UI, self.parent_window)
 
 
     def init_konkurencje(self, comboBox):
