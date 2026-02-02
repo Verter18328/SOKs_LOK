@@ -77,7 +77,7 @@ class Signals_operator_window:
         self.UI.exit_To_title_shortcut.activated.connect(self.exit_to_title_triggered)
         self.UI.actionNowe_zawody.triggered.connect(self.actionNowe_zawody_triggered)
         self.UI.actionOtworz_zawody.triggered.connect(self.otworz_zawody_triggered)
-    
+        self.UI.button_dodaj_wynik.clicked.connect(self.dodaj_wynik_clicked)
     def on_zawody_created(self, zawody_obj):
         # Obsługa sygnału po utworzeniu nowych zawodów
         self.UI.pageZawody_managment.zawody_data = zawody_obj
@@ -138,6 +138,7 @@ class Signals_operator_window:
             tabWidget = self.UI.tabWidget_zawody
             newTab = Globals.UI_LOADER.load(ui_path)
             newTab.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            newTab.tableWidget.verticalHeader().setVisible(False)  # Ukryj etykiety wierszy
             tabWidget.addTab(newTab, tab_name)
     def otworz_zawody_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageLista_zawodow)
@@ -166,5 +167,9 @@ class Signals_operator_window:
         self.UI.tabWidget_zawody.clear()
         self.zawody_managment_page_entered()
 
+    def dodaj_wynik_clicked(self):
+        tableWidget = self.UI.tabWidget_zawody.currentWidget().tableWidget
+        row_count = tableWidget.rowCount()
+        tableWidget.insertRow(row_count)
 
             

@@ -29,11 +29,16 @@
       <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>
      </property>
      <property name="gridStyle">
-      <enum>Qt::PenStyle::DashLine</enum>
+      <enum>Qt::PenStyle::SolidLine</enum>
      </property>
      <property name="sortingEnabled">
       <bool>false</bool>
      </property>
+     <column>
+      <property name="text">
+       <string>Nowa kolumna</string>
+      </property>
+     </column>
      <column>
       <property name="text">
        <string>Imie i Nazwisko</string>
@@ -41,7 +46,7 @@
      </column>
      <column>
       <property name="text">
-       <string>1 Zapadka</string>
+       <string>Numer Tarczy</string>
       </property>
      </column>
      <column>
