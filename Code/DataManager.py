@@ -48,14 +48,17 @@ class Loaded_zawody:
             for konkurencja in konkurencje
         }
 
-
 class Client_data_manager:
     def __init__(self, db=None):
         self.database = db if db is not None else Globals().database
-    def get_clients(self):
-        query = "SELECT * FROM zawodnicy"
+    def get_clients(self, filter=None):
+        query = '''SELECT * FROM zawodnicy
+                    WHERE imie || ' ' || nazwisko LIKE ?
+                    ORDER BY nazwisko, imie
+                    LIMIT 30''' if filter else "SELECT * FROM zawodnicy"
+        params = (f'%{filter}%',) if filter else ()
         klienci = []
-        results = self.database.query(query)
+        results = self.database.query(query, params)
         if results:
             for row in results:
                 id = row[0]
@@ -125,12 +128,12 @@ class Zawody_data_manager:
         konkurencje = [row[0] for row in konkurencje_results] if konkurencje_results else []
         
         # Utwórz obiekt zawodów (bez wstawiania do bazy)
-        from DataManager import Loaded_zawody
         return Loaded_zawody(id_zawodow, nazwa, dateTime, konkurencje, db=self.database, data_manager=self)
     def get_all_zawody(self):
         query = "SELECT * FROM zawody_lista"
         results = self.database.query(query)
         zawody_list = []
+        
         if results:
             for row in results:
                 id = row[0]

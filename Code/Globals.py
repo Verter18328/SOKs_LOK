@@ -4,6 +4,12 @@ from DatabaseConnection import Database_connection
 from PySide6.QtUiTools import QUiLoader
 import datetime
 
+# TODO: 
+# - Zmienić 'Otwórz zawody' na 'Zarządzaj zawodami' i dodać tam możliwość otwierania istniejących zawodów, a nie tylko tworzenia nowych
+# - Dodać wyszukiwanie zawodów po nazwie i dacie w 'Zarządzaj zawodami'
+# - Obsługa wyników zawodów (tworzenie tabel dla zawodów w db(może inne rozwiązanie???))
+
+
 
 class Globals:
     DATE_FORMAT = '%d/%m/%Y'
@@ -49,6 +55,8 @@ class Globals:
                 cls.KONKURENCJE[key] = value
     
     KONKURENCJE = {}
+
+
     
     def __init__(self):
         self.database = Database_connection()
