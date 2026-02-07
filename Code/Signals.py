@@ -2,8 +2,8 @@ from Globals import Globals
 Globals.setMainDirectory()
 from PySide6.QtGui import QShortcut
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import QMessageBox, QHeaderView, QWidget, QListWidgetItem, QMenu, QCompleter
-from PySide6.QtCore import Qt, Signal, QObject, QStringListModel, QTimer
+from PySide6.QtWidgets import QMessageBox, QHeaderView, QListWidgetItem, QCompleter, QSpacerItem, QSizePolicy, QWidget, QVBoxLayout
+from PySide6.QtCore import Qt, Signal, QObject, QStringListModel, QTimer, QEvent
 from DataManager import client_data_manager, zawody_data_manager, New_zawody
 from DataValidation import New_zawody_data_validation
 
@@ -70,7 +70,7 @@ class Signals_new_competition_dialog(QObject):
 class Signals_operator_window:
     def __init__(self, UI):
         self.UI = UI
-        self.set_completer()
+        self.set_lista_zawodnikow_completer()
         self.timer = QTimer()
         self.timer.setSingleShot(True)
         self.connect_signals()
@@ -181,20 +181,30 @@ class Signals_operator_window:
         row_count = tableWidget.rowCount()
         tableWidget.insertRow(row_count)
 
-    def set_completer(self):
-        self.model = QStringListModel()
-        self.completer = QCompleter(self.model)
-        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
-        self.completer.setFilterMode(Qt.MatchContains)
-        self.UI.lineEditWyszukiwanie_zawodnikow.setCompleter(self.completer)
-    
+    def set_lista_zawodnikow_completer(self):
+        self.lista_zawodnikow_model = QStringListModel()
+        self.lista_zawodnikow_completer = QCompleter(self.lista_zawodnikow_model)
+        self.lista_zawodnikow_completer.setCaseSensitivity(Qt.CaseInsensitive)
+        self.lista_zawodnikow_completer.setFilterMode(Qt.MatchContains)
+        # Pobierz layout zawierający lineEdit i listę
+        self.layout = self.UI.pageZawodnicy.layout()
+        # Utwórz spacer jako widget
+        self.lista_zawodnikow_popup_spacer = QWidget()
+        self.lista_zawodnikow_popup_spacer.setFixedHeight(40)
+        # Dodaj spacer do grid layout na pozycji (2, 0) i przesuń listę na (3, 0)
+        self.layout.removeWidget(self.UI.listaZawodnikow)
+        self.layout.addWidget(self.lista_zawodnikow_popup_spacer, 2, 0, 1, 1)
+        self.layout.addWidget(self.UI.listaZawodnikow, 3, 0, 1, 1)
+        self.lista_zawodnikow_popup_spacer.hide()  # Ukryj na początek
+        self.UI.lineEditWyszukiwanie_zawodnikow.setCompleter(self.lista_zawodnikow_completer)
 
     
     def clients_search_changed(self, lineEdit):
         text = lineEdit.text()
         if len(text) < 3:
-            self.model.setStringList([])
+            self.lista_zawodnikow_model.setStringList([])
             self.timer.stop()
+            self.lista_zawodnikow_popup_spacer.hide()  # Ukryj spacer
             self.actionLista_zawodnikow_triggered(filter=None)
             return
         clients = client_data_manager.get_clients(filter=text)
@@ -203,7 +213,12 @@ class Signals_operator_window:
             imie = client['imie']
             nazwisko = client['nazwisko']
             data.append(f'{imie} {nazwisko}')
-        self.model.setStringList(data)
+        self.lista_zawodnikow_model.setStringList(data)
+        # Pokaż spacer gdy są wyniki
+        if data:
+            self.lista_zawodnikow_popup_spacer.show()
+        else:
+            self.lista_zawodnikow_popup_spacer.hide()
         self.actionLista_zawodnikow_triggered(filter=text)
         self.timer.stop()
         self.timer.start(500)
