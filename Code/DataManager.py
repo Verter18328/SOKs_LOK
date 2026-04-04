@@ -1,89 +1,51 @@
 from Globals import Globals
 Globals.setMainDirectory()
 
-class New_zawody:
-    def __init__(self, nazwa, dateTime, konkurencje, db=None, data_manager=None):
-        self.zawody_data_manager = data_manager if data_manager is not None else zawody_data_manager
-        self.database = db if db is not None else Globals().database
-        self.nazwa = nazwa
-        self.dateTime = dateTime
-        self.konkurencje_ids_dict = {
-            konkurencja: self.zawody_data_manager.get_competition_id_by_name(konkurencja)
-            for konkurencja in konkurencje
-        }
-        result = self.insery_into_zawody_lista()
-        if result[0]:
-            self.id_zawodow = result[1]
-            self.assign_zawody_to_konkurencje()
-        else:
-            print("Error inserting new event into database")
-    def insery_into_zawody_lista(self):
-        query = "INSERT INTO zawody_lista (nazwa, data, godzina) VALUES (?, ?, ?)"
-        params = (self.nazwa, self.dateTime.split(' ')[1], self.dateTime.split(' ')[0])
-        result = self.database.query(query, params)
-        if result:
-            return True, result
-        else:
-            return False, None
-
-class Loaded_zawody:
-    """Klasa do reprezentacji zawodów wczytanych z bazy danych (nie tworzy nowych rekordów)"""
-    def __init__(self, id_zawodow, nazwa, dateTime, konkurencje, db=None, data_manager=None):
-        self.zawody_data_manager = data_manager if data_manager is not None else zawody_data_manager
-        self.database = db if db is not None else Globals().database
-        self.id_zawodow = id_zawodow
-        self.nazwa = nazwa
-        self.dateTime = dateTime
-        self.konkurencje_ids_dict = {
-            konkurencja: self.zawody_data_manager.get_competition_id_by_name(konkurencja)
-            for konkurencja in konkurencje
-        }
-
-class Client_data_manager:
+class Konkurencja:
     def __init__(self, db=None):
         self.database = db if db is not None else Globals().database
-    def get_clients(self, filter=None):
-        query = '''SELECT * FROM zawodnicy
-                    WHERE imie || ' ' || nazwisko LIKE ?
-                    ORDER BY nazwisko, imie
-                    LIMIT 30''' if filter else "SELECT * FROM zawodnicy"
-        params = (f'%{filter}%',) if filter else ()
-        klienci = []
-        results = self.database.query(query, params)
-        if results:
-            for row in results:
-                id = row[0]
-                imie = row[1]
-                nazwisko = row[2]
-                rocznik = row[3]
-                setattr(self, f'{imie} {nazwisko}', {
-                    'id': id,
-                    'imie': imie,
-                    'nazwisko': nazwisko,
-                    'rocznik': rocznik
-                })
-                klienci.append(getattr(self, f'{imie} {nazwisko}'))
-            return klienci
+        self.id = None
+        self.nazwa = None
+        self.ilosc_strzalow = None
+    def get_konkurencja_by_name(self, nazwa):
+        query = "SELECT id, ilosc_strzalow FROM konkurencje_lista WHERE nazwa_log = ?"
+        params = (nazwa,)
+        result = self.database.query(query, params)
+        if result:
+            self.id = result[0][0]
+            self.nazwa = nazwa
+            self.ilosc_strzalow = result[0][1]
+            return self
         else:
             return None
-    def get_id_from_name(self, imie, nazwisko):
-        query = "SELECT id FROM zawodnicy WHERE imie = ? AND nazwisko = ?"
-        params = (imie, nazwisko)
-        results = self.database.query(query, params)
-        if results:
-            return results[0][0]
-        else:
-            return None
-    def get_name_from_id(self, id):
-        query = "SELECT imie, nazwisko FROM zawodnicy WHERE id = ?"
-        params = (id,)
-        results = self.database.query(query, params)
-        if results:
-            imie, nazwisko = results[0]
-            return {'imie': imie, 'nazwisko': nazwisko}
-        else:
-            return None
+    
+    
+
+
+
+class Zawody:
+    def __init__(self, db=None):
+        self.database = db if db is not None else Globals().database
+        self.id = None
+        self.nazwa = None
+        self.dateTime = None
+        self.konkurencje = {}
         
+
+    def get_zawody_by_id(self, id):
+        query = "SELECT nazwa, data, godzina FROM zawody_lista WHERE id = ?"
+        params = (id,)
+        result = self.database.query(query, params)
+        if result:
+            self.id = id
+            self.nazwa, data, godzina = result[0]
+            import datetime
+            self.dateTime = datetime.datetime.strptime(f"{data} {godzina}", Globals.TIMESTAMP_FORMAT)
+            return self
+        else:
+            return None
+
+
 
 class Zawody_data_manager:
     def __init__(self, db=None):
@@ -140,7 +102,56 @@ class Zawody_data_manager:
             return zawody_list
         else:
             return None
+
+zawody_data_manager = Zawody_data_manager()
+
+class Client_data_manager:
+    def __init__(self, db=None):
+        self.database = db if db is not None else Globals().database
+    def get_clients(self, filter=None):
+        query = '''SELECT * FROM zawodnicy
+                    WHERE imie || ' ' || nazwisko LIKE ?
+                    ORDER BY nazwisko, imie
+                    LIMIT 30''' if filter else "SELECT * FROM zawodnicy"
+        params = (f'%{filter}%',) if filter else ()
+        klienci = []
+        results = self.database.query(query, params)
+        if results:
+            for row in results:
+                id = row[0]
+                imie = row[1]
+                nazwisko = row[2]
+                rocznik = row[3]
+                setattr(self, f'{imie} {nazwisko}', {
+                    'id': id,
+                    'imie': imie,
+                    'nazwisko': nazwisko,
+                    'rocznik': rocznik
+                })
+                klienci.append(getattr(self, f'{imie} {nazwisko}'))
+            return klienci
+        else:
+            return None
+    def get_id_from_name(self, imie, nazwisko):
+        query = "SELECT id FROM zawodnicy WHERE imie = ? AND nazwisko = ?"
+        params = (imie, nazwisko)
+        results = self.database.query(query, params)
+        if results:
+            return results[0][0]
+        else:
+            return None
+    def get_name_from_id(self, id):
+        query = "SELECT imie, nazwisko FROM zawodnicy WHERE id = ?"
+        params = (id,)
+        results = self.database.query(query, params)
+        if results:
+            imie, nazwisko = results[0]
+            return {'imie': imie, 'nazwisko': nazwisko}
+        else:
+            return None
+        
+
+
             
         
-zawody_data_manager = Zawody_data_manager()
 client_data_manager = Client_data_manager()
