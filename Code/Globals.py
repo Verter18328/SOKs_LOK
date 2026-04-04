@@ -5,9 +5,12 @@ from PySide6.QtUiTools import QUiLoader
 import datetime
 
 # TODO: 
-# - Zmienić 'Otwórz zawody' na 'Zarządzaj zawodami' i dodać tam możliwość otwierania istniejących zawodów, a nie tylko tworzenia nowych
+# - Dodać creator zawodów !!!!!!!!!!!!
 # - Dodać wyszukiwanie zawodów po nazwie i dacie w 'Zarządzaj zawodami'
 # - Obsługa wyników zawodów (tworzenie tabel dla zawodów w db(może inne rozwiązanie???))
+# - Ustawić maksymalną ilość wyników wyszukiwania zawodników i dodać przycisk 'Pokaż więcej wyników'
+# - Dodać dynamiczny rozmiar spacera w zależności od ilości wyników wyszukiwania zawodników
+# - Naprawić display zawodów w 'Zarządzaj zawodami' (jakoś tak kurwa dziwnie to wygląda)
 
 
 
@@ -36,6 +39,9 @@ class Globals:
         ),
         'ZAPADKI_TABLE': os.path.abspath(
             os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'TabelkaZapadki.ui')
+        ),
+        'KREATOR_KONKURENCJI_DIALOG': os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'KreatorKonkurencji.ui')
         )
     }
     RESOURCES_PATHS_DICT = {
@@ -43,18 +49,7 @@ class Globals:
             os.path.join(os.path.dirname(__file__), '..', 'Resources', 'logo.jpeg')
         )
     }
-    @classmethod
-    def load_competitions(cls):
-        query = "select * from konkurencje_lista"
-        results = cls().database.query(query)
-        if results:
-            for row in results:
-                id = row[0]
-                key = row[1]
-                value = row[2]
-                cls.KONKURENCJE[key] = value
     
-    KONKURENCJE = {}
 
 
     
@@ -67,7 +62,6 @@ class Globals:
     
 
 
-# Automatycznie załaduj konkurencje przy imporcie modułu
-Globals.load_competitions()
+
 
 

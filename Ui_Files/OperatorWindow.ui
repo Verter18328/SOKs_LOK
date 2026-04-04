@@ -87,6 +87,9 @@
         </item>
         <item row="2" column="0">
          <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
           <property name="sizeHint" stdset="0">
            <size>
             <width>40</width>
@@ -154,7 +157,7 @@
     <addaction name="separator"/>
     <addaction name="actionNowe_zawody"/>
     <addaction name="separator"/>
-    <addaction name="actionOtworz_zawody"/>
+    <addaction name="actionZarzadzanie_zawodami"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuZawodnicy">
@@ -197,9 +200,9 @@
     <enum>QAction::NoRole</enum>
    </property>
   </action>
-  <action name="actionOtworz_zawody">
+  <action name="actionZarzadzanie_zawodami">
    <property name="text">
-    <string>Otwórz Zawody</string>
+    <string>Zarządzanie zawodami</string>
    </property>
    <property name="toolTip">
     <string>Otwórz Zawody</string>

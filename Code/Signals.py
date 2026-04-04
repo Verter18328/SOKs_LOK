@@ -5,8 +5,30 @@ from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QMessageBox, QHeaderView, QListWidgetItem, QCompleter, QSpacerItem, QSizePolicy, QWidget, QVBoxLayout
 from PySide6.QtCore import Qt, Signal, QObject, QStringListModel, QTimer, QEvent
 from DataManager import client_data_manager, zawody_data_manager, New_zawody
-from DataValidation import New_zawody_data_validation
+from DataValidation import New_zawody_data_validation, New_konkurencja_data_validation
 
+
+class Signals_kreator_konkurencji_dialog(QObject):
+    konkurencja_created = Signal(int, str)  # Sygnał przekazujący obiekt konkurencji
+    
+    def __init__(self, UI, parent_window=None):
+        super().__init__()
+        self.UI = UI
+        self.parent_window = parent_window
+        self.connect_signals()
+    def connect_signals(self):
+        self.UI.buttonBox.clicked.connect(self.accepted)
+    def accepted(self):
+        shots_quantity = self.UI.spinBox_shots_quantity.value()
+        name = self.UI.lineEdit_name.text()
+        validator = New_konkurencja_data_validation(shots_quantity, name)
+        is_valid, message = validator.is_valid_result
+        if is_valid:
+            # Tutaj można dodać kod do zapisania nowej konkurencji do bazy danych
+            self.UI.close()
+            self.konkurencja_created.emit(shots_quantity, name)  # Emituj sygnał z obiektem konkurencji
+        else:
+            QMessageBox.warning(self.UI, "Błąd", message)
 
 class Signals_new_competition_dialog(QObject):
     zawody_created = Signal(object)  # Sygnał przekazujący obiekt New_zawody
@@ -15,14 +37,9 @@ class Signals_new_competition_dialog(QObject):
         super().__init__()
         self.UI = UI
         self.parent_window = parent_window
-        self.KONKURENCJE = Globals.KONKURENCJE
         self.connect_signals()
     def connect_signals(self):
-        for idx, konkurencja in enumerate(self.KONKURENCJE.keys(), start=1):
-            comboBox = getattr(self.UI, f'comboBox_konkurencja{idx}')
-            comboBox.currentIndexChanged.connect(lambda index, box_idx=idx, cb=comboBox: self.display_comboBoxes(box_idx, cb))
-        self.UI.buttonBox.accepted.disconnect()
-        self.UI.buttonBox.accepted.connect(self.accepted)
+        self.UI.button_dodaj_konkurencje.clicked.connect(self.new_konkurencja)
     def display_comboBoxes(self, last_visible_comboBox_number, current_comboBox):
         selected_text = current_comboBox.currentText()
         if selected_text != 'Puste':  # Pokaż następny comboBox tylko gdy wybrano konkretną konkurencję, a nie "Puste"
@@ -40,9 +57,19 @@ class Signals_new_competition_dialog(QObject):
                 next_comboBox.show()
                 label = getattr(self.UI, f'label_{last_visible_comboBox_number + 1}')
                 label.show()
+                button = getattr(self.UI, f'new_konkurencja_button_{last_visible_comboBox_number + 1}')
+                button.show()
             except AttributeError:
                 # Jeśli nie ma więcej comboBoxów, po prostu przejdź
                 pass
+    def new_konkurencja(self):
+        from OperatorUI_Handler import Kreator_konkurencji_dialog
+        self.kreator_dialog = Kreator_konkurencji_dialog()
+        self.kreator_dialog.signals.konkurencja_created.connect(self.on_konkurencja_created)
+        self.kreator_dialog.show_dialog()
+    def on_konkurencja_created(self, name, shots_quantity):
+        self.UI.konkurencje_list.addItem(f"{name} - {shots_quantity}")
+
     def accepted(self):
         selected_nazwa = self.UI.lineEdit_nazwa.text()
         selected_dateTime = self.UI.dateTime_input.dateTime().toString('HH:mm dd/MM/yyyy')
@@ -81,7 +108,7 @@ class Signals_operator_window:
         self.UI.exit_To_title_shortcut = QShortcut(QKeySequence("Esc"), self.UI)
         self.UI.exit_To_title_shortcut.activated.connect(self.exit_to_title_triggered)
         self.UI.actionNowe_zawody.triggered.connect(self.actionNowe_zawody_triggered)
-        self.UI.actionOtworz_zawody.triggered.connect(self.otworz_zawody_triggered)
+        self.UI.actionZarzadzanie_zawodami.triggered.connect(self.zarzadzanie_zawodami_triggered)
         self.UI.button_dodaj_wynik.clicked.connect(self.dodaj_wynik_clicked)
         self.UI.lineEditWyszukiwanie_zawodnikow.textChanged.connect(
             lambda: self.clients_search_changed(self.UI.lineEditWyszukiwanie_zawodnikow)
@@ -107,10 +134,10 @@ class Signals_operator_window:
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageTitle)
     def actionNowe_zawody_triggered(self):
         from OperatorUI_Handler import Nowe_zawody_dialog
-        dialog = Nowe_zawody_dialog(parent=self.UI)
+        self.nowe_zawody_dialog = Nowe_zawody_dialog(parent=self.UI)
         # Podłącz sygnał z dialogu
-        dialog.signals.zawody_created.connect(self.on_zawody_created)
-        dialog.show_dialog()
+        self.nowe_zawody_dialog.signals.zawody_created.connect(self.on_zawody_created)
+        self.nowe_zawody_dialog.show_dialog()
     def zawody_managment_page_entered(self):
         zawody = getattr(self.UI.pageZawody_managment, 'zawody_data', None)
         if not zawody:
@@ -149,7 +176,7 @@ class Signals_operator_window:
             newTab.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
             newTab.tableWidget.verticalHeader().setVisible(False)  # Ukryj etykiety wierszy
             tabWidget.addTab(newTab, tab_name)
-    def otworz_zawody_triggered(self):
+    def zarzadzanie_zawodami_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageLista_zawodow)
         listWidget = self.UI.listWidget_lista_zawodow
         listWidget.clear()
@@ -190,7 +217,7 @@ class Signals_operator_window:
         self.layout = self.UI.pageZawodnicy.layout()
         # Utwórz spacer jako widget
         self.lista_zawodnikow_popup_spacer = QWidget()
-        self.lista_zawodnikow_popup_spacer.setFixedHeight(40)
+        self.lista_zawodnikow_popup_spacer.setFixedHeight(30)
         # Dodaj spacer do grid layout na pozycji (2, 0) i przesuń listę na (3, 0)
         self.layout.removeWidget(self.UI.listaZawodnikow)
         self.layout.addWidget(self.lista_zawodnikow_popup_spacer, 2, 0, 1, 1)

@@ -25,15 +25,6 @@ class New_zawody:
             return True, result
         else:
             return False, None
-    def assign_zawody_to_konkurencje(self):
-        for konkurencja in self.konkurencje_ids_dict.keys():
-            konkurencja_id = self.konkurencje_ids_dict.get(konkurencja)
-            query = "INSERT INTO zawody_konkurencje_link (id_zawodow, id_konkurencji) VALUES (?, ?)"
-            params = (self.id_zawodow, konkurencja_id)
-            result = self.database.query(query, params)
-            if result is None:
-                print(f"Error inserting competition {konkurencja} for event {self.nazwa}")
-
 
 class Loaded_zawody:
     """Klasa do reprezentacji zawodów wczytanych z bazy danych (nie tworzy nowych rekordów)"""
