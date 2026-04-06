@@ -15,10 +15,14 @@ import datetime
 
 
 class Globals:
-    DATE_FORMAT = '%d/%m/%Y'
-    TIME_FORMAT = '%H:%M:%S'
-    TIMESTAMP_FORMAT = '%H:%M %d/%m/%Y'
-    TODAY_DATE = datetime.datetime.now().strftime(DATE_FORMAT)
+    DATE_FORMAT_PY = '%d/%m/%Y'
+    DATE_FORMAT_QT = 'dd/MM/yyyy'
+    TIME_FORMAT_PY = '%H:%M:%S'
+    TIME_FORMAT_QT = 'HH:mm:ss'
+    TIMESTAMP_FORMAT_PY = '%H:%M %d/%m/%Y'
+    TIMESTAMP_FORMAT_QT = 'HH:mm dd/MM/yyyy'
+    TODAY_DATE = datetime.datetime.now().strftime(DATE_FORMAT_PY)
+
     DB_PATH = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'Database_Files', 'Database.db')
     )
@@ -59,6 +63,32 @@ class Globals:
     @staticmethod
     def setMainDirectory():
         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+    @staticmethod
+    def set_timestamp_format(timestamp):
+        try:
+            timestamp_obj = datetime.datetime.strptime(timestamp, Globals.TIMESTAMP_FORMAT_PY)
+            return timestamp_obj.strftime(Globals.TIMESTAMP_FORMAT_PY)
+        except ValueError:
+            timestamp_obj = datetime.datetime.strptime(timestamp, Globals.TIMESTAMP_FORMAT_QT)
+            return timestamp_obj.strftime(Globals.TIMESTAMP_FORMAT_QT)
+    @staticmethod
+    def set_date_format(date):
+        try:
+            date_obj = datetime.datetime.strptime(date, Globals.DATE_FORMAT_PY)
+            return date_obj.strftime(Globals.DATE_FORMAT_PY)
+        except ValueError:
+            date_obj = datetime.datetime.strptime(date, Globals.DATE_FORMAT_QT)
+            return date_obj.strftime(Globals.DATE_FORMAT_QT)
+    @staticmethod
+    def set_time_format(time):
+        try:
+            time_obj = datetime.datetime.strptime(time, Globals.TIME_FORMAT_PY)
+            return time_obj.strftime(Globals.TIME_FORMAT_PY)
+        except ValueError:
+            time_obj = datetime.datetime.strptime(time, Globals.TIME_FORMAT_QT)
+            return time_obj.strftime(Globals.TIME_FORMAT_QT)
+    
     
 
 

@@ -14,10 +14,9 @@ class New_zawody_data_validation:
             return False, "Nazwa zawodów nie może być pusta."
         if not self.dateTime.strip():
             return False, "Data i czas zawodów nie mogą być puste."
-        
         try:
             # Parsuj datetime z formatu "HH:MM DD/MM/YYYY"
-            zawody_datetime = datetime.datetime.strptime(self.dateTime, '%H:%M %d/%m/%Y')
+            zawody_datetime = datetime.datetime.strptime(self.dateTime, Globals.TIMESTAMP_FORMAT_PY)
             now = datetime.datetime.now()
             
             if zawody_datetime < now:
@@ -27,8 +26,6 @@ class New_zawody_data_validation:
         
         if not self.konkurencje:
             return False, "Należy wybrać co najmniej jedną konkurencję."
-        if len(self.konkurencje) != len(set(self.konkurencje)):
-            return False, "Wybrane konkurencje muszą być unikalne."
         return True, "Dane są poprawne."
 
 class New_konkurencja_data_validation:
@@ -46,17 +43,4 @@ class New_konkurencja_data_validation:
             return False, "Nazwa konkurencji nie może być pusta."
         return True, "Dane są poprawne."
     
-class New_konkurencja_data_validation:
-    def __init__(self, shots_quantity, name):
-        self.shots_quantity = shots_quantity
-        self.name = name
-        self.is_valid_result = self.is_valid()
-    
-    def is_valid(self):
-        if not isinstance(self.shots_quantity, int) or self.shots_quantity <= 0:
-            return False, "Liczba strzałów musi być dodatnią liczbą całkowitą."
-        if self.shots_quantity > 99:
-            return False, "Liczba strzałów nie może przekraczać 99."
-        if not self.name.strip():
-            return False, "Nazwa konkurencji nie może być pusta."
-        return True, "Dane są poprawne."
+

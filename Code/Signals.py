@@ -4,12 +4,12 @@ from PySide6.QtGui import QShortcut
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QMessageBox, QHeaderView, QListWidgetItem, QCompleter, QSpacerItem, QSizePolicy, QWidget, QVBoxLayout
 from PySide6.QtCore import Qt, Signal, QObject, QStringListModel, QTimer, QEvent
-from DataManager import client_data_manager, zawody_data_manager, New_zawody
+from DataManager import client_data_manager, zawody_data_manager, konkurencja_data_manager
 from DataValidation import New_zawody_data_validation, New_konkurencja_data_validation
 
 
 class Signals_kreator_konkurencji_dialog(QObject):
-    konkurencja_created = Signal(int, str)  # Sygnał przekazujący obiekt konkurencji
+    konkurencja_created = Signal(object)  # Sygnał przekazujący obiekt konkurencji
     
     def __init__(self, UI, parent_window=None):
         super().__init__()
@@ -17,16 +17,17 @@ class Signals_kreator_konkurencji_dialog(QObject):
         self.parent_window = parent_window
         self.connect_signals()
     def connect_signals(self):
-        self.UI.buttonBox.clicked.connect(self.accepted)
+        self.UI.buttonBox.accepted.connect(self.accepted)
+        self.UI.buttonBox.rejected.connect(self.UI.close)
     def accepted(self):
         shots_quantity = self.UI.spinBox_shots_quantity.value()
         name = self.UI.lineEdit_name.text()
         validator = New_konkurencja_data_validation(shots_quantity, name)
         is_valid, message = validator.is_valid_result
         if is_valid:
-            # Tutaj można dodać kod do zapisania nowej konkurencji do bazy danych
+            konkurencja_obj = konkurencja_data_manager.insert_konkurencja(name, shots_quantity)
             self.UI.close()
-            self.konkurencja_created.emit(shots_quantity, name)  # Emituj sygnał z obiektem konkurencji
+            self.konkurencja_created.emit(konkurencja_obj)  # Emituj sygnał z obiektem konkurencji
         else:
             QMessageBox.warning(self.UI, "Błąd", message)
 
@@ -37,62 +38,32 @@ class Signals_new_competition_dialog(QObject):
         super().__init__()
         self.UI = UI
         self.parent_window = parent_window
+        self.konkurencje = {}
         self.connect_signals()
     def connect_signals(self):
         self.UI.button_dodaj_konkurencje.clicked.connect(self.new_konkurencja)
-    def display_comboBoxes(self, last_visible_comboBox_number, current_comboBox):
-        selected_text = current_comboBox.currentText()
-        if selected_text != 'Puste':  # Pokaż następny comboBox tylko gdy wybrano konkretną konkurencję, a nie "Puste"
-            try:
-                # Usuń wybraną konkurencję ze wszystkich kolejnych comboBoxów
-                for comboBox_number in range(1, len(self.KONKURENCJE) + 1):
-                    if comboBox_number > last_visible_comboBox_number:
-                        comboBox_to_update = getattr(self.UI, f'comboBox_konkurencja{comboBox_number}')
-                        index_to_remove = comboBox_to_update.findText(selected_text)
-                        if index_to_remove != -1:
-                            comboBox_to_update.removeItem(index_to_remove)
-
-                # Pokaż następny comboBox i label
-                next_comboBox = getattr(self.UI, f'comboBox_konkurencja{last_visible_comboBox_number + 1}')
-                next_comboBox.show()
-                label = getattr(self.UI, f'label_{last_visible_comboBox_number + 1}')
-                label.show()
-                button = getattr(self.UI, f'new_konkurencja_button_{last_visible_comboBox_number + 1}')
-                button.show()
-            except AttributeError:
-                # Jeśli nie ma więcej comboBoxów, po prostu przejdź
-                pass
+        self.UI.buttonBox_zawody.accepted.connect(self.accepted)
+        self.UI.buttonBox_zawody.rejected.connect(self.UI.close)
     def new_konkurencja(self):
         from OperatorUI_Handler import Kreator_konkurencji_dialog
         self.kreator_dialog = Kreator_konkurencji_dialog()
         self.kreator_dialog.signals.konkurencja_created.connect(self.on_konkurencja_created)
         self.kreator_dialog.show_dialog()
-    def on_konkurencja_created(self, name, shots_quantity):
-        self.UI.konkurencje_list.addItem(f"{name} - {shots_quantity}")
-
+    def on_konkurencja_created(self, konkurencja_obj):
+        self.UI.konkurencje_list.addItem(f"{konkurencja_obj.nazwa} - {konkurencja_obj.ilosc_strzalow} strzałów")
+        self.konkurencje[konkurencja_obj.nazwa] = konkurencja_obj
     def accepted(self):
-        selected_nazwa = self.UI.lineEdit_nazwa.text()
-        selected_dateTime = self.UI.dateTime_input.dateTime().toString('HH:mm dd/MM/yyyy')
-        selected_konkurencje = []
-        for comboBox_number in range(1, len(self.KONKURENCJE) + 1):
-            comboBox = getattr(self.UI, f'comboBox_konkurencja{comboBox_number}')
-            selected_text = comboBox.currentText()
-            if selected_text != 'Puste':
-                for key, value in self.KONKURENCJE.items():
-                    if value == selected_text:
-                        selected_konkurencje.append(key)
+        selected_nazwa = self.UI.lineEdit_nazwa_zawodow.text()
+        selected_dateTime = self.UI.dateTimeEdit_data_zawodow.dateTime().toString(Globals.TIMESTAMP_FORMAT_QT)
+        selected_konkurencje = {name: obj for name, obj in self.konkurencje.items() if self.UI.konkurencje_list.findItems(f"{name} - {obj.ilosc_strzalow} strzałów", Qt.MatchExactly)}
         validator = New_zawody_data_validation(selected_nazwa, selected_dateTime, selected_konkurencje)
         is_valid, message = validator.is_valid_result
         if is_valid:
-            # Tutaj można dodać kod do zapisania nowych zawodów do bazy danych
-            zawody_obj = New_zawody(selected_nazwa, selected_dateTime, selected_konkurencje)
-            setattr(self, f'zawody_{selected_nazwa}', zawody_obj)
+            zawody_obj = zawody_data_manager.insert_zawody(selected_nazwa, selected_dateTime, selected_konkurencje)
+            self.zawody_created.emit(zawody_obj)  # Emituj sygnał z obiektem zawodów
             self.UI.close()
-            # Emituj sygnał z obiektom zawodów
-            self.zawody_created.emit(zawody_obj)
         else:
-            QMessageBox.warning(self.UI, "Błędne dane", message)
-
+            QMessageBox.warning(self.UI, "Błąd", message)
 
 class Signals_operator_window:
     def __init__(self, UI):
@@ -147,44 +118,16 @@ class Signals_operator_window:
         font.setPointSize(16)
         self.UI.label_zawody_nazwa.setFont(font)
         self.UI.label_zawody_nazwa.setText(f"<b>{zawody_name}</b>")
-        for konkurencja in zawody.konkurencje_ids_dict.keys():
-            tab_name = konkurencja.split('_')[0]
-            match tab_name:
-                case 'kbks':
-                    tab_name = 'KBKS'
-                case 'karabinekPneumatyczny':
-                    tab_name = 'Karabinek Pneumatyczny'
-                case 'pistoletPneumatyczny':
-                    tab_name = 'Pistolet Pneumatyczny'
-                case 'pistoletBocznyZapłon':
-                    tab_name = 'Pistolet Boczny Zapłon'
-                case _:
-                    pass  # Pozostaw oryginalną nazwę, jeśli nie pasuje do żadnego przypadku
-            ilosc_strzalow = konkurencja.split('_')[2]
-            match ilosc_strzalow:
-                case '5strz':
-                    ui_path = Globals.UI_PATHS_DICT['5_SHOOTS_TABLE']
-                case '10strz':
-                    ui_path = Globals.UI_PATHS_DICT['10_SHOOTS_TABLE']
-                case 'zapadki':
-                    ui_path = Globals.UI_PATHS_DICT['ZAPADKI_TABLE']
-                case _:
-                    print(f"Unknown competition type: {ilosc_strzalow}")
-                    continue  # Pomijaj nieznane konkurencje
-            tabWidget = self.UI.tabWidget_zawody
-            newTab = Globals.UI_LOADER.load(ui_path)
-            newTab.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-            newTab.tableWidget.verticalHeader().setVisible(False)  # Ukryj etykiety wierszy
-            tabWidget.addTab(newTab, tab_name)
+        pass
     def zarzadzanie_zawodami_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageLista_zawodow)
         listWidget = self.UI.listWidget_lista_zawodow
         listWidget.clear()
         lista_zawodow = zawody_data_manager.get_all_zawody()
         for zawody in lista_zawodow:
-            id = zawody['id']
-            nazwa = zawody['nazwa']
-            data = zawody['data']
+            id = zawody.id
+            nazwa = zawody.nazwa
+            data = zawody.dateTime.strftime(Globals.DATE_FORMAT_PY)
             list_item_text = f"{nazwa} - {data}"
             item = QListWidgetItem(list_item_text)
             item.setData(Qt.UserRole, id)  # Przechowuj ID zawodów w danych użytkownika
