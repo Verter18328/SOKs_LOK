@@ -78,23 +78,11 @@ class Zawody_data_manager:
             godzina = result[0][2]
             zawody = Zawody(self.database)
             zawody.id = id_zawodow
+            
             zawody.nazwa = nazwa
             import datetime
-            zawody.dateTime = datetime.datetime.strptime(f"{data} {godzina}", Globals.TIMESTAMP_FORMAT_PY)
-            query = "SELECT COUNT(*) FROM \"zawody-konkurencje_link\" WHERE id_zawodow = ?"
-            params = (id_zawodow,)
-            konkurencje_count_result = self.database.query(query, params)
-            if konkurencje_count_result:
-                konkurencje_count = konkurencje_count_result[0][0]
-                for i in range(1, konkurencje_count + 1):
-                    query = "SELECT id_konkurencji FROM \"zawody-konkurencje_link\" WHERE id_zawodow = ? LIMIT 1 OFFSET ?"
-                    params = (id_zawodow, i - 1)
-                    id_konkurencji_result = self.database.query(query, params)
-                    if id_konkurencji_result:
-                        id_konkurencji = id_konkurencji_result[0][0]
-                        konkurencja = konkurencja_data_manager.get_konkurencja_by_id(id_konkurencji)
-                        if konkurencja:
-                            zawody.konkurencje[konkurencja.nazwa] = konkurencja
+            zawody.dateTime = datetime.datetime.strptime(f"{godzina} {data}", Globals.TIMESTAMP_FORMAT_PY)
+            zawody.konkurencje = self.get_konkurencje_assigned_to_zawody(id_zawodow)
             return zawody
         else:
             return None
@@ -111,39 +99,27 @@ class Zawody_data_manager:
             zawody.id = id_zawodow
             zawody.nazwa = nazwa
             import datetime
-            zawody.dateTime = datetime.datetime.strptime(f"{data} {godzina}", Globals.TIMESTAMP_FORMAT_PY)
-            query = "SELECT COUNT(*) FROM \"zawody-konkurencje_link\" WHERE id_zawodow = ?"
-            params = (id_zawodow,)
-            konkurencje_count_result = self.database.query(query, params)
-            if konkurencje_count_result:
-                konkurencje_count = konkurencje_count_result[0][0]
-                for i in range(1, konkurencje_count + 1):
-                    query = "SELECT id_konkurencji FROM \"zawody-konkurencje_link\" WHERE id_zawodow = ? LIMIT 1 OFFSET ?"
-                    params = (id_zawodow, i - 1)
-                    id_konkurencji_result = self.database.query(query, params)
-                    if id_konkurencji_result:
-                        id_konkurencji = id_konkurencji_result[0][0]
-                        konkurencja = konkurencja_data_manager.get_konkurencja_by_id(id_konkurencji)
-                        if konkurencja:
-                            zawody.konkurencje[konkurencja.nazwa] = konkurencja
+            zawody.dateTime = datetime.datetime.strptime(f"{godzina} {data}", Globals.TIMESTAMP_FORMAT_PY)
+            zawody.konkurencje = self.get_konkurencje_assigned_to_zawody(id_zawodow)
             return zawody
         else:
             return None
 
 
     def get_all_zawody(self):
-        query = "SELECT count(*) FROM zawody_lista"
-        result = self.database.query(query)
-        if result:
-            zawody_count = result[0][0]
-            zawody_list = {}
-            for i in range(1, zawody_count + 1):
-                zawody = self.get_zawody_by_id(i)
+        query = "SELECT id FROM zawody_lista"
+        results = self.database.query(query)
+        zawody_list = {}
+        if results:
+            for row in results:
+                id_zawodow = row[0]
+                zawody = self.get_zawody_by_id(id_zawodow)
                 if zawody:
                     zawody_list[zawody.nazwa] = zawody
             return zawody_list
         else:
             return None
+                
         
     def insert_zawody(self, nazwa, dateTime, konkurencje):
         import datetime
@@ -153,6 +129,8 @@ class Zawody_data_manager:
         query = "INSERT INTO zawody_lista (nazwa, data, godzina) VALUES (?, ?, ?)"
         params = (nazwa, date_str, time_str)
         latest_id = self.database.query(query, params)
+        if not latest_id:
+            return None
         for konkurencja in konkurencje.values():
             query = "INSERT INTO \"zawody-konkurencje_link\" (id_zawodow, id_konkurencji) VALUES (?, ?)"
             params = (latest_id, konkurencja.id)
@@ -163,6 +141,18 @@ class Zawody_data_manager:
             return zawody
         else:
             return None
+    def get_konkurencje_assigned_to_zawody(self, id_zawodow):
+        query = "SELECT id_konkurencji FROM \"zawody-konkurencje_link\" WHERE id_zawodow = ?"
+        params = (id_zawodow,)
+        result = self.database.query(query, params)
+        konkurencje = {}
+        if result:
+            for row in result:
+                id_konkurencji = row[0]
+                konkurencja = konkurencja_data_manager.get_konkurencja_by_id(id_konkurencji)
+                if konkurencja:
+                    konkurencje[konkurencja.nazwa] = konkurencja
+        return konkurencje
 
 
 zawody_data_manager = Zawody_data_manager()

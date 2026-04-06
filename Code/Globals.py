@@ -11,6 +11,7 @@ import datetime
 # - Ustawić maksymalną ilość wyników wyszukiwania zawodników i dodać przycisk 'Pokaż więcej wyników'
 # - Dodać dynamiczny rozmiar spacera w zależności od ilości wyników wyszukiwania zawodników
 # - Naprawić display zawodów w 'Zarządzaj zawodami' (jakoś tak kurwa dziwnie to wygląda)
+# - Obsługa dogrywek
 
 
 

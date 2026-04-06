@@ -119,12 +119,15 @@ class Signals_operator_window:
         self.UI.label_zawody_nazwa.setFont(font)
         self.UI.label_zawody_nazwa.setText(f"<b>{zawody_name}</b>")
         pass
+        # Tutaj można dodać więcej logiki do wyświetlania informacji o zawodach i konkurencjach
     def zarzadzanie_zawodami_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageLista_zawodow)
         listWidget = self.UI.listWidget_lista_zawodow
         listWidget.clear()
         lista_zawodow = zawody_data_manager.get_all_zawody()
-        for zawody in lista_zawodow:
+        if not lista_zawodow:
+            return
+        for nazwa, zawody in lista_zawodow.items():
             id = zawody.id
             nazwa = zawody.nazwa
             data = zawody.dateTime.strftime(Globals.DATE_FORMAT_PY)

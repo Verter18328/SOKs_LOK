@@ -14,15 +14,17 @@ class New_zawody_data_validation:
             return False, "Nazwa zawodów nie może być pusta."
         if not self.dateTime.strip():
             return False, "Data i czas zawodów nie mogą być puste."
-        try:
-            # Parsuj datetime z formatu "HH:MM DD/MM/YYYY"
-            zawody_datetime = datetime.datetime.strptime(self.dateTime, Globals.TIMESTAMP_FORMAT_PY)
-            now = datetime.datetime.now()
-            
-            if zawody_datetime < now:
-                return False, "Data i czas zawodów nie mogą być w przeszłości."
-        except ValueError:
+        zawody_datetime = None
+        for format in (Globals.TIMESTAMP_FORMAT_PY, Globals.TIMESTAMP_FORMAT_QT):
+            try:
+                zawody_datetime = datetime.datetime.strptime(self.dateTime, format)
+                break
+            except ValueError:
+                continue
+        if zawody_datetime is None:
             return False, "Nieprawidłowy format daty i czasu."
+        if zawody_datetime < datetime.datetime.now():
+            return False, "Data i czas zawodów nie mogą być w przeszłości."
         
         if not self.konkurencje:
             return False, "Należy wybrać co najmniej jedną konkurencję."
