@@ -197,8 +197,12 @@ class Signals_operator_window:
                         score += int(cell_value)
                 tableWidget.setItem(row, tableWidget.columnCount() - 1, QTableWidgetItem(str(score)))
                 return
+            tableWidget.blockSignals(True)
+
             tableWidget.setCurrentCell(row, next_col)
             tableWidget.editItem(tableWidget.item(row, next_col))
+            #TODO block signal dla validacji
+            tableWidget.blockSignals(False)
     def set_lista_zawodnikow_completer(self):
         self.lista_zawodnikow_model = QStringListModel()
         self.lista_zawodnikow_completer = QCompleter(self.lista_zawodnikow_model)
