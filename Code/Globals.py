@@ -20,8 +20,8 @@ class Globals:
     DATE_FORMAT_QT = 'dd/MM/yyyy'
     TIME_FORMAT_PY = '%H:%M:%S'
     TIME_FORMAT_QT = 'HH:mm:ss'
-    TIMESTAMP_FORMAT_PY = '%H:%M %d/%m/%Y'
-    TIMESTAMP_FORMAT_QT = 'HH:mm dd/MM/yyyy'
+    TIMESTAMP_FORMAT_PY = '%H:%M:%S %d/%m/%Y'
+    TIMESTAMP_FORMAT_QT = 'HH:mm:ss dd/MM/yyyy'
     TODAY_DATE = datetime.datetime.now().strftime(DATE_FORMAT_PY)
 
     DB_PATH = os.path.abspath(

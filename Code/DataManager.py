@@ -43,6 +43,7 @@ class Konkurencja_data_manager:
         query = "INSERT INTO konkurencje_lista (nazwa, ilosc_strzalow) VALUES (?, ?)"
         params = (nazwa, ilosc_strzalow)
         latest_id = self.database.query(query, params)
+        print(latest_id)
         if not latest_id:
             return None
         konkurencja = self.get_konkurencja_by_id(latest_id)
@@ -53,8 +54,7 @@ konkurencja_data_manager = Konkurencja_data_manager()
 
 
 class Zawody:
-    def __init__(self, db=None):
-        self.database = db if db is not None else Globals().database
+    def __init__(self):
         self.id = None
         self.nazwa = None
         self.dateTime = None
@@ -76,7 +76,7 @@ class Zawody_data_manager:
             nazwa = result[0][0]
             data = result[0][1]
             godzina = result[0][2]
-            zawody = Zawody(self.database)
+            zawody = Zawody()
             zawody.id = id_zawodow
             
             zawody.nazwa = nazwa

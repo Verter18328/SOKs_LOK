@@ -2,10 +2,10 @@ from Globals import Globals
 Globals.setMainDirectory()
 from PySide6.QtGui import QShortcut
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import QMessageBox, QHeaderView, QListWidgetItem, QCompleter, QSpacerItem, QSizePolicy, QWidget, QVBoxLayout
+from PySide6.QtWidgets import QAbstractItemView, QMessageBox, QHeaderView, QListWidgetItem, QCompleter, QSpacerItem, QSizePolicy, QTableWidget, QTableWidgetItem, QWidget, QVBoxLayout
 from PySide6.QtCore import Qt, Signal, QObject, QStringListModel, QTimer, QEvent
 from DataManager import client_data_manager, zawody_data_manager, konkurencja_data_manager
-from DataValidation import New_zawody_data_validation, New_konkurencja_data_validation
+from DataValidation import New_zawody_data_validation, New_konkurencja_data_validation, Wyniki_tab_validation
 
 
 class Signals_kreator_konkurencji_dialog(QObject):
@@ -44,14 +44,20 @@ class Signals_new_competition_dialog(QObject):
         self.UI.button_dodaj_konkurencje.clicked.connect(self.new_konkurencja)
         self.UI.buttonBox_zawody.accepted.connect(self.accepted)
         self.UI.buttonBox_zawody.rejected.connect(self.UI.close)
+        self.UI.comboBox_konkurencje.activated.connect(self.konkurencja_comboBox_selected)
+    def konkurencja_comboBox_selected(self, index):
+        konkurencja_obj = self.UI.comboBox_konkurencje.userData(index)
+        self.UI.konkurencje_list.addItem(f"{konkurencja_obj.nazwa} - {konkurencja_obj.ilosc_strzalow} strzałów", userData=konkurencja_obj)
     def new_konkurencja(self):
         from OperatorUI_Handler import Kreator_konkurencji_dialog
         self.kreator_dialog = Kreator_konkurencji_dialog()
         self.kreator_dialog.signals.konkurencja_created.connect(self.on_konkurencja_created)
         self.kreator_dialog.show_dialog()
     def on_konkurencja_created(self, konkurencja_obj):
-        self.UI.konkurencje_list.addItem(f"{konkurencja_obj.nazwa} - {konkurencja_obj.ilosc_strzalow} strzałów")
+        self.UI.konkurencje_list.addItem(f"{konkurencja_obj.nazwa} - {konkurencja_obj.ilosc_strzalow} strzałów", userData=konkurencja_obj)
         self.konkurencje[konkurencja_obj.nazwa] = konkurencja_obj
+        for konkurencja in self.konkurencje.values():
+            self.UI.comboBox_konkurencje.addItem(konkurencja.nazwa, userData=konkurencja)
     def accepted(self):
         selected_nazwa = self.UI.lineEdit_nazwa_zawodow.text()
         selected_dateTime = self.UI.dateTimeEdit_data_zawodow.dateTime().toString(Globals.TIMESTAMP_FORMAT_QT)
@@ -118,8 +124,14 @@ class Signals_operator_window:
         font.setPointSize(16)
         self.UI.label_zawody_nazwa.setFont(font)
         self.UI.label_zawody_nazwa.setText(f"<b>{zawody_name}</b>")
-        pass
-        # Tutaj można dodać więcej logiki do wyświetlania informacji o zawodach i konkurencjach
+        for konkurencja in zawody.konkurencje.values():
+            tableWidget = QTableWidget()
+            self.UI.tabWidget_zawody.addTab(tableWidget, konkurencja.nazwa)
+            tableWidget.setColumnCount(konkurencja.ilosc_strzalow + 2)
+            tableWidget.setHorizontalHeaderLabels(["Zawodnik"] + [f"Strzał {i+1}" for i in range(konkurencja.ilosc_strzalow)] + ["Razem"])
+            for col in range(tableWidget.columnCount()):
+                tableWidget.horizontalHeader().setSectionResizeMode(col, QHeaderView.Stretch)
+        # TODO: GENEROWANIE TABELEK
     def zarzadzanie_zawodami_triggered(self):
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageLista_zawodow)
         listWidget = self.UI.listWidget_lista_zawodow
@@ -150,10 +162,43 @@ class Signals_operator_window:
         self.zawody_managment_page_entered()
 
     def dodaj_wynik_clicked(self):
-        tableWidget = self.UI.tabWidget_zawody.currentWidget().tableWidget
+        tableWidget = self.UI.tabWidget_zawody.currentWidget()
         row_count = tableWidget.rowCount()
         tableWidget.insertRow(row_count)
+        tableWidget.setSelectionMode(QAbstractItemView.SingleSelection)
+        tableWidget.setSelectionBehavior(QAbstractItemView.SelectItems)
 
+        for col in range(tableWidget.columnCount()):
+            tableWidget.setItem(row_count, col, QTableWidgetItem(""))
+        
+        tableWidget.setCurrentCell(row_count, 0)
+        tableWidget.editItem(tableWidget.item(row_count, 0))
+
+        tableWidget.itemChanged.connect(lambda item: self.on_table_item_changed(tableWidget, item, row_count))
+
+
+    def on_table_item_changed(self, tableWidget, item, row):
+        value = item.text()
+        is_shot_column = tableWidget.column(item) != 0
+        validator = Wyniki_tab_validation(value, is_shot_column)
+        if not validator.is_valid_result[0]:
+            QMessageBox.warning(tableWidget, "Błąd", validator.is_valid_result[1])
+            item.setText("")
+            return                
+        
+        if tableWidget.row(item) == row:
+            cur_col = tableWidget.column(item)
+            next_col = cur_col + 1
+            if next_col >= tableWidget.columnCount() - 1:
+                score = 0
+                for col in range(1, tableWidget.columnCount() - 1):
+                    cell_value = tableWidget.item(row, col).text()
+                    if cell_value.isdigit():
+                        score += int(cell_value)
+                tableWidget.setItem(row, tableWidget.columnCount() - 1, QTableWidgetItem(str(score)))
+                return
+            tableWidget.setCurrentCell(row, next_col)
+            tableWidget.editItem(tableWidget.item(row, next_col))
     def set_lista_zawodnikow_completer(self):
         self.lista_zawodnikow_model = QStringListModel()
         self.lista_zawodnikow_completer = QCompleter(self.lista_zawodnikow_model)

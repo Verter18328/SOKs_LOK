@@ -45,4 +45,21 @@ class New_konkurencja_data_validation:
             return False, "Nazwa konkurencji nie może być pusta."
         return True, "Dane są poprawne."
     
+class Wyniki_tab_validation:
+    def __init__ (self, value, is_shot_column):
+        self.value = value
+        self.is_shot_column = is_shot_column
+        self.is_valid_result = self.is_valid()
 
+    def is_valid(self):
+        if self.is_shot_column:
+            if not self.value.isdigit():
+                return False, "Wynik strzału musi być liczbą całkowitą."
+            elif int(self.value) < 0:
+                return False, "Wynik strzału nie może być ujemny."
+        else:
+            if self.value.strip() == "":
+                return False, "Nazwa zawodnika nie może być pusta."
+            elif self.value.isdigit():
+                return False, "Nazwa zawodnika nie może być liczbą." 
+        return True, "Dane są poprawne."
