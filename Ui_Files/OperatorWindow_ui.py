@@ -101,10 +101,6 @@ class Ui_MainWindow(object):
 
         self.gridLayout_3.addWidget(self.button_dodaj_wynik, 2, 2, 1, 1)
 
-        self.horizontalSpacer = QSpacerItem(15, 5, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Maximum)
-
-        self.gridLayout_3.addItem(self.horizontalSpacer, 2, 0, 1, 1)
-
         self.tabWidget_zawody = QTabWidget(self.pageZawody_managment)
         self.tabWidget_zawody.setObjectName(u"tabWidget_zawody")
         sizePolicy.setHeightForWidth(self.tabWidget_zawody.sizePolicy().hasHeightForWidth())
@@ -116,6 +112,11 @@ class Ui_MainWindow(object):
         self.label_zawody_nazwa.setObjectName(u"label_zawody_nazwa")
 
         self.gridLayout_3.addWidget(self.label_zawody_nazwa, 0, 0, 1, 3)
+
+        self.pushButton = QPushButton(self.pageZawody_managment)
+        self.pushButton.setObjectName(u"pushButton")
+
+        self.gridLayout_3.addWidget(self.pushButton, 2, 0, 1, 1)
 
         self.stackedWidget.addWidget(self.pageZawody_managment)
         self.pageLista_zawodow = QWidget()
@@ -222,6 +223,7 @@ class Ui_MainWindow(object):
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p align=\"center\"><span style=\" font-size:14pt; font-weight:700;\">Zarz\u0105dzanie zawodnikami</span></p></body></html>", None))
         self.button_dodaj_wynik.setText(QCoreApplication.translate("MainWindow", u"Dodaj Wynik", None))
         self.label_zawody_nazwa.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p align=\"center\"><span style=\" font-size:14pt; font-weight:700;\">Nazwa zawod\u00f3w</span></p></body></html>", None))
+        self.pushButton.setText(QCoreApplication.translate("MainWindow", u"Zamknij zawody", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p align=\"center\"><span style=\" font-size:16pt; font-weight:700;\">Lista Zawod\u00f3w</span></p></body></html>", None))
         self.menuBagno.setTitle(QCoreApplication.translate("MainWindow", u"Zawody", None))
         self.menuZawodnicy.setTitle(QCoreApplication.translate("MainWindow", u"Zawodnicy", None))

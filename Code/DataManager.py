@@ -1,56 +1,54 @@
+import datetime
+
 from Globals import Globals
 Globals.setMainDirectory()
 
+
 class Konkurencja:
-    def __init__(self, db=None):
-        self.database = db if db is not None else Globals().database
+    def __init__(self, name=None, shots_quantity=None):
         self.id = None
-        self.nazwa = None
-        self.ilosc_strzalow = None
-    
-    
+        self.name = name
+        self.shots_quantity = shots_quantity
+
+
 class Konkurencja_data_manager:
     def __init__(self, db=None):
         self.database = db if db is not None else Globals().database
-    def get_konkurencja_by_name(self, nazwa):
+
+    def get_konkurencja_by_name(self, name):
         query = "SELECT id, ilosc_strzalow FROM konkurencje_lista WHERE nazwa = ?"
-        params = (nazwa,)
-        result = self.database.query(query, params)
+        result = self.database.query(query, (name,))
         if result:
-            setattr(self, f'{nazwa}_obj', Konkurencja(self.database))  # Inicjalizacja atrybutu o nazwie konkurencji
-            getattr(self, f'{nazwa}_obj').id = result[0][0]
-            getattr(self, f'{nazwa}_obj').nazwa = nazwa
-            getattr(self, f'{nazwa}_obj').ilosc_strzalow = result[0][1]
-            return getattr(self, f'{nazwa}_obj')
-        else:
-            return None
-    def get_konkurencja_by_id(self, id):
+            obj = Konkurencja(name, result[0][1])
+            obj.id = result[0][0]
+            return obj
+        return None
+
+    def get_konkurencja_by_id(self, konkurencja_id):
         query = "SELECT nazwa, ilosc_strzalow FROM konkurencje_lista WHERE id = ?"
-        params = (id,)
-        result = self.database.query(query, params)
+        result = self.database.query(query, (konkurencja_id,))
         if result:
-            nazwa = result[0][0]
-            ilosc_strzalow = result[0][1]
-            setattr(self, f'{nazwa}_obj', Konkurencja(self.database))  # Inicjalizacja atrybutu o nazwie konkurencji
-            getattr(self, f'{nazwa}_obj').id = id
-            getattr(self, f'{nazwa}_obj').nazwa = nazwa
-            getattr(self, f'{nazwa}_obj').ilosc_strzalow = ilosc_strzalow
-            return getattr(self, f'{nazwa}_obj')
-        else:
-            return None
-        
-    def insert_konkurencja(self, nazwa, ilosc_strzalow):
+            obj = Konkurencja(result[0][0], result[0][1])
+            obj.id = konkurencja_id
+            return obj
+        return None
+
+    def insert_konkurencja(self, name, shots_quantity):
         query = "INSERT INTO konkurencje_lista (nazwa, ilosc_strzalow) VALUES (?, ?)"
-        params = (nazwa, ilosc_strzalow)
-        latest_id = self.database.query(query, params)
-        print(latest_id)
+        latest_id = self.database.query(query, (name, shots_quantity))
         if not latest_id:
             return None
-        konkurencja = self.get_konkurencja_by_id(latest_id)
-        return konkurencja
+        return self.get_konkurencja_by_id(latest_id)
+
+    def get_all_konkurencje(self):
+        query = "SELECT nazwa, ilosc_strzalow FROM konkurencje_lista"
+        results = self.database.query(query)
+        if not results:
+            return None
+        return {row[0]: Konkurencja(row[0], row[1]) for row in results}
+
 
 konkurencja_data_manager = Konkurencja_data_manager()
-
 
 
 class Zawody:
@@ -61,149 +59,105 @@ class Zawody:
         self.konkurencje = {}
 
 
-
-
-
 class Zawody_data_manager:
     def __init__(self, db=None):
         self.database = db if db is not None else Globals().database
-    
-    def get_zawody_by_id(self, id_zawodow):
+
+    def get_zawody_by_id(self, zawody_id):
         query = "SELECT nazwa, data, godzina FROM zawody_lista WHERE id = ?"
-        params = (id_zawodow,)
-        result = self.database.query(query, params)
-        if result:
-            nazwa = result[0][0]
-            data = result[0][1]
-            godzina = result[0][2]
-            zawody = Zawody()
-            zawody.id = id_zawodow
-            
-            zawody.nazwa = nazwa
-            import datetime
-            zawody.dateTime = datetime.datetime.strptime(f"{godzina} {data}", Globals.TIMESTAMP_FORMAT_PY)
-            zawody.konkurencje = self.get_konkurencje_assigned_to_zawody(id_zawodow)
-            return zawody
-        else:
+        result = self.database.query(query, (zawody_id,))
+        if not result:
             return None
-    
+        zawody = Zawody()
+        zawody.id = zawody_id
+        zawody.nazwa = result[0][0]
+        zawody.dateTime = datetime.datetime.strptime(f"{result[0][2]} {result[0][1]}", Globals.TIMESTAMP_FORMAT_PY)
+        zawody.konkurencje = self.get_konkurencje_assigned_to_zawody(zawody_id)
+        return zawody
+
     def get_zawody_by_name(self, nazwa):
         query = "SELECT id, data, godzina FROM zawody_lista WHERE nazwa = ?"
-        params = (nazwa,)
-        result = self.database.query(query, params)
-        if result:
-            id_zawodow = result[0][0]
-            data = result[0][1]
-            godzina = result[0][2]
-            zawody = Zawody(self.database)
-            zawody.id = id_zawodow
-            zawody.nazwa = nazwa
-            import datetime
-            zawody.dateTime = datetime.datetime.strptime(f"{godzina} {data}", Globals.TIMESTAMP_FORMAT_PY)
-            zawody.konkurencje = self.get_konkurencje_assigned_to_zawody(id_zawodow)
-            return zawody
-        else:
+        result = self.database.query(query, (nazwa,))
+        if not result:
             return None
-
+        zawody = Zawody()
+        zawody.id = result[0][0]
+        zawody.nazwa = nazwa
+        zawody.dateTime = datetime.datetime.strptime(f"{result[0][2]} {result[0][1]}", Globals.TIMESTAMP_FORMAT_PY)
+        zawody.konkurencje = self.get_konkurencje_assigned_to_zawody(zawody.id)
+        return zawody
 
     def get_all_zawody(self):
-        query = "SELECT id FROM zawody_lista"
-        results = self.database.query(query)
-        zawody_list = {}
-        if results:
-            for row in results:
-                id_zawodow = row[0]
-                zawody = self.get_zawody_by_id(id_zawodow)
-                if zawody:
-                    zawody_list[zawody.nazwa] = zawody
-            return zawody_list
-        else:
+        results = self.database.query("SELECT id FROM zawody_lista")
+        if not results:
             return None
-                
-        
+        zawody_dict = {}
+        for row in results:
+            zawody = self.get_zawody_by_id(row[0])
+            if zawody:
+                zawody_dict[zawody.nazwa] = zawody
+        return zawody_dict
+
     def insert_zawody(self, nazwa, dateTime, konkurencje):
-        import datetime
-        dateTime = datetime.datetime.strptime(dateTime, Globals.TIMESTAMP_FORMAT_PY)
-        date_str = dateTime.strftime(Globals.DATE_FORMAT_PY)
-        time_str = dateTime.strftime(Globals.TIME_FORMAT_PY)
+        dt = datetime.datetime.strptime(dateTime, Globals.TIMESTAMP_FORMAT_PY)
         query = "INSERT INTO zawody_lista (nazwa, data, godzina) VALUES (?, ?, ?)"
-        params = (nazwa, date_str, time_str)
-        latest_id = self.database.query(query, params)
+        latest_id = self.database.query(query, (nazwa, dt.strftime(Globals.DATE_FORMAT_PY), dt.strftime(Globals.TIME_FORMAT_PY)))
         if not latest_id:
             return None
+        link_query = "INSERT INTO \"zawody-konkurencje_link\" (id_zawodow, id_konkurencji) VALUES (?, ?)"
         for konkurencja in konkurencje.values():
-            query = "INSERT INTO \"zawody-konkurencje_link\" (id_zawodow, id_konkurencji) VALUES (?, ?)"
-            params = (latest_id, konkurencja.id)
-            self.database.query(query, params)
+            self.database.query(link_query, (latest_id, konkurencja.id))
+        return self.get_zawody_by_id(latest_id)
 
-        zawody = self.get_zawody_by_id(latest_id)
-        if zawody:
-            return zawody
-        else:
-            return None
-    def get_konkurencje_assigned_to_zawody(self, id_zawodow):
+    def get_konkurencje_assigned_to_zawody(self, zawody_id):
         query = "SELECT id_konkurencji FROM \"zawody-konkurencje_link\" WHERE id_zawodow = ?"
-        params = (id_zawodow,)
-        result = self.database.query(query, params)
+        result = self.database.query(query, (zawody_id,))
+        if not result:
+            return {}
         konkurencje = {}
-        if result:
-            for row in result:
-                id_konkurencji = row[0]
-                konkurencja = konkurencja_data_manager.get_konkurencja_by_id(id_konkurencji)
-                if konkurencja:
-                    konkurencje[konkurencja.nazwa] = konkurencja
+        for row in result:
+            konkurencja = konkurencja_data_manager.get_konkurencja_by_id(row[0])
+            if konkurencja:
+                konkurencje[konkurencja.name] = konkurencja
         return konkurencje
 
 
 zawody_data_manager = Zawody_data_manager()
 
+
 class Client_data_manager:
     def __init__(self, db=None):
         self.database = db if db is not None else Globals().database
+
     def get_clients(self, filter=None):
-        query = '''SELECT * FROM zawodnicy
-                    WHERE imie || ' ' || nazwisko LIKE ?
-                    ORDER BY nazwisko, imie
-                    LIMIT 30''' if filter else "SELECT * FROM zawodnicy"
-        params = (f'%{filter}%',) if filter else ()
-        klienci = []
-        results = self.database.query(query, params)
-        if results:
-            for row in results:
-                id = row[0]
-                imie = row[1]
-                nazwisko = row[2]
-                rocznik = row[3]
-                setattr(self, f'{imie} {nazwisko}', {
-                    'id': id,
-                    'imie': imie,
-                    'nazwisko': nazwisko,
-                    'rocznik': rocznik
-                })
-                klienci.append(getattr(self, f'{imie} {nazwisko}'))
-            return klienci
+        if filter:
+            query = """SELECT * FROM zawodnicy
+                       WHERE imie || ' ' || nazwisko LIKE ?
+                       ORDER BY nazwisko, imie
+                       LIMIT 30"""
+            params = (f'%{filter}%',)
         else:
+            query = "SELECT * FROM zawodnicy"
+            params = ()
+        results = self.database.query(query, params)
+        if not results:
             return None
+        return [
+            {'id': row[0], 'imie': row[1], 'nazwisko': row[2], 'rocznik': row[3]}
+            for row in results
+        ]
+
     def get_id_from_name(self, imie, nazwisko):
         query = "SELECT id FROM zawodnicy WHERE imie = ? AND nazwisko = ?"
-        params = (imie, nazwisko)
-        results = self.database.query(query, params)
-        if results:
-            return results[0][0]
-        else:
-            return None
-    def get_name_from_id(self, id):
+        results = self.database.query(query, (imie, nazwisko))
+        return results[0][0] if results else None
+
+    def get_name_from_id(self, client_id):
         query = "SELECT imie, nazwisko FROM zawodnicy WHERE id = ?"
-        params = (id,)
-        results = self.database.query(query, params)
+        results = self.database.query(query, (client_id,))
         if results:
-            imie, nazwisko = results[0]
-            return {'imie': imie, 'nazwisko': nazwisko}
-        else:
-            return None
-        
+            return {'imie': results[0][0], 'nazwisko': results[0][1]}
+        return None
 
 
-            
-        
 client_data_manager = Client_data_manager()

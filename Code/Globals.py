@@ -1,18 +1,18 @@
 import os
 import sys
-from DatabaseConnection import Database_connection
-from PySide6.QtUiTools import QUiLoader
 import datetime
 
-# TODO: 
-# - Dodać creator zawodów !!!!!!!!!!!!
+from DatabaseConnection import Database_connection
+from PySide6.QtUiTools import QUiLoader
+
+
+# TODO:
 # - Dodać wyszukiwanie zawodów po nazwie i dacie w 'Zarządzaj zawodami'
-# - Obsługa wyników zawodów (tworzenie tabel dla zawodów w db(może inne rozwiązanie???))
+# - Obsługa wyników zawodów (tworzenie tabel dla zawodów w db)
 # - Ustawić maksymalną ilość wyników wyszukiwania zawodników i dodać przycisk 'Pokaż więcej wyników'
 # - Dodać dynamiczny rozmiar spacera w zależności od ilości wyników wyszukiwania zawodników
-# - Naprawić display zawodów w 'Zarządzaj zawodami' (jakoś tak kurwa dziwnie to wygląda)
+# - Naprawić display zawodów w 'Zarządzaj zawodami'
 # - Obsługa dogrywek
-
 
 
 class Globals:
@@ -54,45 +54,38 @@ class Globals:
             os.path.join(os.path.dirname(__file__), '..', 'Resources', 'logo.jpeg')
         )
     }
-    
 
-
-    
     def __init__(self):
         self.database = Database_connection()
-    
+
     @staticmethod
     def setMainDirectory():
         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
     @staticmethod
     def set_timestamp_format(timestamp):
-        try:
-            timestamp_obj = datetime.datetime.strptime(timestamp, Globals.TIMESTAMP_FORMAT_PY)
-            return timestamp_obj.strftime(Globals.TIMESTAMP_FORMAT_PY)
-        except ValueError:
-            timestamp_obj = datetime.datetime.strptime(timestamp, Globals.TIMESTAMP_FORMAT_QT)
-            return timestamp_obj.strftime(Globals.TIMESTAMP_FORMAT_QT)
+        for fmt in (Globals.TIMESTAMP_FORMAT_PY, Globals.TIMESTAMP_FORMAT_QT):
+            try:
+                return datetime.datetime.strptime(timestamp, fmt).strftime(fmt)
+            except ValueError:
+                continue
+        return None
+
     @staticmethod
     def set_date_format(date):
-        try:
-            date_obj = datetime.datetime.strptime(date, Globals.DATE_FORMAT_PY)
-            return date_obj.strftime(Globals.DATE_FORMAT_PY)
-        except ValueError:
-            date_obj = datetime.datetime.strptime(date, Globals.DATE_FORMAT_QT)
-            return date_obj.strftime(Globals.DATE_FORMAT_QT)
+        for fmt in (Globals.DATE_FORMAT_PY, Globals.DATE_FORMAT_QT):
+            try:
+                return datetime.datetime.strptime(date, fmt).strftime(fmt)
+            except ValueError:
+                continue
+        return None
+
     @staticmethod
     def set_time_format(time):
-        try:
-            time_obj = datetime.datetime.strptime(time, Globals.TIME_FORMAT_PY)
-            return time_obj.strftime(Globals.TIME_FORMAT_PY)
-        except ValueError:
-            time_obj = datetime.datetime.strptime(time, Globals.TIME_FORMAT_QT)
-            return time_obj.strftime(Globals.TIME_FORMAT_QT)
-    
-    
-
-
-
-
+        for fmt in (Globals.TIME_FORMAT_PY, Globals.TIME_FORMAT_QT):
+            try:
+                return datetime.datetime.strptime(time, fmt).strftime(fmt)
+            except ValueError:
+                continue
+        return None
 

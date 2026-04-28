@@ -1,8 +1,9 @@
-import datetime
 import sys
-from PySide6.QtWidgets import *
-from PySide6.QtCore import *
-from PySide6.QtGui import *
+
+from PySide6.QtWidgets import QApplication, QDialog, QMainWindow
+from PySide6.QtCore import QDateTime
+from PySide6.QtGui import QIcon
+
 from Globals import Globals
 Globals.setMainDirectory()
 import Resources.resources_rc
@@ -22,7 +23,6 @@ class Kreator_konkurencji_dialog(QDialog):
         self.UI.show()
 
 
-
 class Nowe_zawody_dialog(QDialog):
     def __init__(self, global_config=None, parent=None):
         super().__init__(parent)
@@ -30,7 +30,6 @@ class Nowe_zawody_dialog(QDialog):
         self.UI = global_config.UI_LOADER.load(global_config.UI_PATHS_DICT['NEW_COMPETITION_DIALOG'])
         self.UI.setWindowTitle("Stwórz nowe zawody")
         self.UI.setWindowIcon(QIcon(global_config.RESOURCES_PATHS_DICT['LOGO_IMAGE']))
-
         timestamp = QDateTime.currentDateTime()
         self.UI.dateTimeEdit_data_zawodow.setDateTime(timestamp)
         self.UI.dateTimeEdit_data_zawodow.setMinimumDateTime(timestamp)
@@ -40,17 +39,17 @@ class Nowe_zawody_dialog(QDialog):
     def show_dialog(self):
         self.UI.show()
 
+
 class Operator_Window(QMainWindow):
-    def __init__(self, global_config=None,):
+    def __init__(self, global_config=None):
         super().__init__()
         global_config = global_config if global_config is not None else Globals()
-        name = global_config.PROJECT_NAME
-        logo = global_config.RESOURCES_PATHS_DICT['LOGO_IMAGE']
         self.UI = global_config.UI_LOADER.load(global_config.UI_PATHS_DICT['OPERATOR_WINDOW'])
-        self.UI.setWindowTitle(name)
-        self.UI.setWindowIcon(QIcon(logo))
+        self.UI.setWindowTitle(global_config.PROJECT_NAME)
+        self.UI.setWindowIcon(QIcon(global_config.RESOURCES_PATHS_DICT['LOGO_IMAGE']))
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageTitle)
         self.signals = Signals_operator_window(self.UI)
+
     def show_window(self):
         self.UI.show()
 
