@@ -1,8 +1,16 @@
+"""Moduł konfiguracji globalnej aplikacji SOKs_LOK.
+
+Zawiera klasę `Globals` przechowującą:
+- formaty dat/czasu używane w całej aplikacji
+- ścieżki do plików UI i zasobów
+- metody pomocnicze do parsowania i formatowania dat
+"""
+
 import os
 import sys
 import datetime
 
-from DatabaseConnection import Database_connection
+from database_connection import DatabaseConnection
 from PySide6.QtUiTools import QUiLoader
 
 
@@ -16,6 +24,10 @@ from PySide6.QtUiTools import QUiLoader
 
 
 class Globals:
+    """Centralna konfiguracja aplikacji — formaty, ścieżki, połączenie z bazą danych."""
+
+    # ─── Formaty dat i czasu ───────────────────────────────────────────
+
     DATE_FORMAT_PY = '%d/%m/%Y'
     DATE_FORMAT_QT = 'dd/MM/yyyy'
     TIME_FORMAT_PY = '%H:%M:%S'
@@ -24,11 +36,14 @@ class Globals:
     TIMESTAMP_FORMAT_QT = 'HH:mm:ss dd/MM/yyyy'
     TODAY_DATE = datetime.datetime.now().strftime(DATE_FORMAT_PY)
 
+    # ─── Ścieżki i zasoby ─────────────────────────────────────────────
+
     DB_PATH = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'Database_Files', 'Database.db')
     )
     PROJECT_NAME = 'SOKs_LOK'
     UI_LOADER = QUiLoader()
+
     UI_PATHS_DICT = {
         'OPERATOR_WINDOW': os.path.abspath(
             os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'OperatorWindow.ui')
@@ -49,50 +64,56 @@ class Globals:
             os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'KreatorKonkurencji.ui')
         )
     }
+
     RESOURCES_PATHS_DICT = {
         'LOGO_IMAGE': os.path.abspath(
             os.path.join(os.path.dirname(__file__), '..', 'Resources', 'logo.jpeg')
         )
     }
-    def __init__(self):
+
+    def __init__(self) -> None:
         """Inicjalizuje zasoby globalne używane przez aplikację."""
-        self.database = Database_connection()
+        self.database = DatabaseConnection()
 
     @staticmethod
-    def setMainDirectory():
+    def set_main_directory() -> None:
         """Dodaje katalog główny projektu do `sys.path` (ułatwia importy relative)."""
-        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+        main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        if main_dir not in sys.path:
+            sys.path.append(main_dir)
+
+    # ─── Parsowanie i formatowanie dat ─────────────────────────────────
 
     @staticmethod
-    def set_timestamp_format(timestamp):
-        """Próbuje sparsować `timestamp` używając znanych formatów i zwraca sformatowany łańcuch.
+    def _parse_with_formats(value: str, formats: tuple[str, ...]) -> str | None:
+        """Próbuje sparsować `value` kolejnymi formatami z `formats`.
 
-        Zwraca `None` jeśli żaden format nie pasuje.
+        Zwraca sformatowany łańcuch przy pierwszym dopasowaniu lub `None`.
         """
-        for fmt in (Globals.TIMESTAMP_FORMAT_PY, Globals.TIMESTAMP_FORMAT_QT):
+        for fmt in formats:
             try:
-                return datetime.datetime.strptime(timestamp, fmt).strftime(fmt)
+                return datetime.datetime.strptime(value, fmt).strftime(fmt)
             except ValueError:
                 continue
         return None
 
     @staticmethod
-    def set_date_format(date):
-        """Podobnie jak `set_timestamp_format` ale dla daty."""
-        for fmt in (Globals.DATE_FORMAT_PY, Globals.DATE_FORMAT_QT):
-            try:
-                return datetime.datetime.strptime(date, fmt).strftime(fmt)
-            except ValueError:
-                continue
-        return None
+    def set_timestamp_format(timestamp: str) -> str | None:
+        """Parsuje i formatuje timestamp (czas + data)."""
+        return Globals._parse_with_formats(
+            timestamp, (Globals.TIMESTAMP_FORMAT_PY, Globals.TIMESTAMP_FORMAT_QT)
+        )
 
     @staticmethod
-    def set_time_format(time):
-        """Podobnie jak `set_timestamp_format` ale dla czasu."""
-        for fmt in (Globals.TIME_FORMAT_PY, Globals.TIME_FORMAT_QT):
-            try:
-                return datetime.datetime.strptime(time, fmt).strftime(fmt)
-            except ValueError:
-                continue
-        return None
+    def set_date_format(date: str) -> str | None:
+        """Parsuje i formatuje datę."""
+        return Globals._parse_with_formats(
+            date, (Globals.DATE_FORMAT_PY, Globals.DATE_FORMAT_QT)
+        )
 
+    @staticmethod
+    def set_time_format(time: str) -> str | None:
+        """Parsuje i formatuje czas."""
+        return Globals._parse_with_formats(
+            time, (Globals.TIME_FORMAT_PY, Globals.TIME_FORMAT_QT)
+        )
