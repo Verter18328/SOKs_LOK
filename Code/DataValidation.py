@@ -1,3 +1,11 @@
+"""Walidatory formularzy używane w dialogach aplikacji.
+
+Zawiera proste klasy walidujące dane wejściowe dla:
+- tworzenia zawodów
+- tworzenia konkurencji
+- pojedynczych wpisów w tabeli wyników
+"""
+
 import datetime
 
 from Globals import Globals
@@ -5,6 +13,11 @@ Globals.setMainDirectory()
 
 
 class New_zawody_data_validation:
+    """Waliduje dane z formularza tworzenia zawodów.
+
+    Metoda `is_valid()` zwraca krotkę `(bool, message)`.
+    """
+
     def __init__(self, nazwa, dateTime, konkurencje):
         self.nazwa = nazwa
         self.dateTime = dateTime
@@ -33,6 +46,8 @@ class New_zawody_data_validation:
 
 
 class New_konkurencja_data_validation:
+    """Waliduje nazwę i liczbę strzałów dla nowej konkurencji."""
+
     def __init__(self, shots_quantity, name):
         self.shots_quantity = shots_quantity
         self.name = name
@@ -49,6 +64,11 @@ class New_konkurencja_data_validation:
 
 
 class Wyniki_tab_validation:
+    """Walidator pojedynczego pola w tabeli wyników.
+
+    `is_shot_column=True` oznacza, że oczekujemy liczby całkowitej (wynik strzału).
+    """
+
     def __init__(self, value, is_shot_column):
         self.value = value
         self.is_shot_column = is_shot_column

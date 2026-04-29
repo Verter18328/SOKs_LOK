@@ -54,16 +54,21 @@ class Globals:
             os.path.join(os.path.dirname(__file__), '..', 'Resources', 'logo.jpeg')
         )
     }
-
     def __init__(self):
+        """Inicjalizuje zasoby globalne używane przez aplikację."""
         self.database = Database_connection()
 
     @staticmethod
     def setMainDirectory():
+        """Dodaje katalog główny projektu do `sys.path` (ułatwia importy relative)."""
         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
     @staticmethod
     def set_timestamp_format(timestamp):
+        """Próbuje sparsować `timestamp` używając znanych formatów i zwraca sformatowany łańcuch.
+
+        Zwraca `None` jeśli żaden format nie pasuje.
+        """
         for fmt in (Globals.TIMESTAMP_FORMAT_PY, Globals.TIMESTAMP_FORMAT_QT):
             try:
                 return datetime.datetime.strptime(timestamp, fmt).strftime(fmt)
@@ -73,6 +78,7 @@ class Globals:
 
     @staticmethod
     def set_date_format(date):
+        """Podobnie jak `set_timestamp_format` ale dla daty."""
         for fmt in (Globals.DATE_FORMAT_PY, Globals.DATE_FORMAT_QT):
             try:
                 return datetime.datetime.strptime(date, fmt).strftime(fmt)
@@ -82,6 +88,7 @@ class Globals:
 
     @staticmethod
     def set_time_format(time):
+        """Podobnie jak `set_timestamp_format` ale dla czasu."""
         for fmt in (Globals.TIME_FORMAT_PY, Globals.TIME_FORMAT_QT):
             try:
                 return datetime.datetime.strptime(time, fmt).strftime(fmt)

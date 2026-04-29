@@ -1,3 +1,9 @@
+"""Signal handlers and UI logic for main operator window and dialogs.
+
+Ten moduł zawiera klasy obsługujące sygnały z okien dialogowych i okna operatora.
+Zmieniono nazwy metod i pól, aby były czytelne i przewidywalne.
+"""
+
 from Globals import Globals
 Globals.setMainDirectory()
 
@@ -13,6 +19,11 @@ from DataValidation import New_zawody_data_validation, New_konkurencja_data_vali
 
 
 class Signals_kreator_konkurencji_dialog(QObject):
+    """Obsługa sygnałów w dialogu tworzenia konkurencji.
+
+    Sygnał `konkurencja_created` emituje utworzony obiekt `Konkurencja`.
+    """
+
     konkurencja_created = Signal(object)
 
     def __init__(self, UI, parent_window=None):
@@ -26,6 +37,7 @@ class Signals_kreator_konkurencji_dialog(QObject):
         self.UI.buttonBox.rejected.connect(self.UI.close)
 
     def accepted(self):
+        """Waliduje i zapisuje nową konkurencję do bazy."""
         shots_quantity = self.UI.spinBox_shots_quantity.value()
         name = self.UI.lineEdit_name.text()
         validator = New_konkurencja_data_validation(shots_quantity, name)
@@ -39,6 +51,11 @@ class Signals_kreator_konkurencji_dialog(QObject):
 
 
 class Signals_new_competition_dialog(QObject):
+    """Obsługa dialogu tworzenia nowych zawodów.
+
+    `zawody_created` emituje obiekt `Zawody` po poprawnym utworzeniu.
+    """
+
     zawody_created = Signal(object)
 
     def __init__(self, UI, parent_window=None):
@@ -56,16 +73,19 @@ class Signals_new_competition_dialog(QObject):
         self.UI.comboBox_konkurencje.activated.connect(self.konkurencja_comboBox_selected)
 
     def get_konkurencje(self):
+        """Ładuje dostępne konkurencje do comboboxa."""
         konkurencje = konkurencja_data_manager.get_all_konkurencje()
         if not konkurencje:
             return
         for konkurencja in konkurencje.values():
+            # Dodajemy nazwę + liczbę strzałów i przechowujemy obiekt w UserRole
             self.UI.comboBox_konkurencje.addItem(
                 f"{konkurencja.name} - {konkurencja.shots_quantity} strzałów", userData=konkurencja
             )
             self.konkurencje[konkurencja.name] = konkurencja
 
     def konkurencja_comboBox_selected(self, index):
+        """Dodaje wybraną konkurencję do listy w dialogu."""
         konkurencja_obj = self.UI.comboBox_konkurencje.itemData(index)
         item = QListWidgetItem(f"{konkurencja_obj.name} - {konkurencja_obj.shots_quantity} strzałów")
         item.setData(Qt.UserRole, konkurencja_obj)
@@ -78,6 +98,7 @@ class Signals_new_competition_dialog(QObject):
         self.kreator_dialog.show_dialog()
 
     def on_konkurencja_created(self, konkurencja_obj):
+        """Handler dodający nową konkurencję po powrocie z kreatora."""
         item = QListWidgetItem(f"{konkurencja_obj.name} - {konkurencja_obj.shots_quantity} strzałów")
         item.setData(Qt.UserRole, konkurencja_obj)
         self.UI.konkurencje_list.addItem(item)
@@ -86,6 +107,7 @@ class Signals_new_competition_dialog(QObject):
             self.UI.comboBox_konkurencje.addItem(konkurencja.name, userData=konkurencja)
 
     def accepted(self):
+        """Waliduje i tworzy obiekt `Zawody` na podstawie danych z formularza."""
         selected_nazwa = self.UI.lineEdit_nazwa_zawodow.text()
         selected_dateTime = self.UI.dateTimeEdit_data_zawodow.dateTime().toString(Globals.TIMESTAMP_FORMAT_QT)
         selected_konkurencje = {
@@ -103,6 +125,8 @@ class Signals_new_competition_dialog(QObject):
 
 
 class Signals_operator_window:
+    """Logika i obsługa sygnałów głównego okna operatora."""
+
     def __init__(self, UI):
         self.UI = UI
         self.set_lista_zawodnikow_completer()
@@ -113,6 +137,7 @@ class Signals_operator_window:
     def connect_signals(self):
         self.timer.timeout.connect(self.on_debounce_timeout)
         self.UI.actionLista_zawodnikow.triggered.connect(self.actionLista_zawodnikow_triggered)
+        # Skrót Esc do powrotu
         self.UI.exit_To_title_shortcut = QShortcut(QKeySequence("Esc"), self.UI)
         self.UI.exit_To_title_shortcut.activated.connect(self.exit_to_title_triggered)
         self.UI.actionNowe_zawody.triggered.connect(self.actionNowe_zawody_triggered)
@@ -123,12 +148,14 @@ class Signals_operator_window:
         )
 
     def on_zawody_created(self, zawody_obj):
+        """Przełącza widok na stronę zarządzania zawodami po utworzeniu nowych zawodów."""
         self.UI.pageZawody_managment.zawody_data = zawody_obj
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawody_managment)
         self.UI.tabWidget_zawody.clear()
         self.zawody_managment_page_entered()
 
     def actionLista_zawodnikow_triggered(self, filter=None):
+        """Ładuje listę zawodników (może być filtrowana)."""
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawodnicy)
         zawodnicy = client_data_manager.get_clients(filter=filter)
         if zawodnicy is None:
@@ -148,6 +175,7 @@ class Signals_operator_window:
         self.nowe_zawody_dialog.show_dialog()
 
     def zawody_managment_page_entered(self):
+        """Generuje tabele wyników dla każdej konkurencji przypisanej do zawodów."""
         zawody = getattr(self.UI.pageZawody_managment, 'zawody_data', None)
         if not zawody:
             return
@@ -164,9 +192,10 @@ class Signals_operator_window:
             )
             for col in range(tableWidget.columnCount()):
                 tableWidget.horizontalHeader().setSectionResizeMode(col, QHeaderView.Stretch)
-        # TODO: GENEROWANIE TABELEK
+        # TODO: GENEROWANIE TABELEK (wypełnianie danymi, nagłówki, zachowanie edycji)
 
     def zarzadzanie_zawodami_triggered(self):
+        """Wyświetla listę zawodów i inicjalizuje context menu jeśli potrzeba."""
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageLista_zawodow)
         listWidget = self.UI.listWidget_lista_zawodow
         listWidget.clear()
@@ -178,17 +207,19 @@ class Signals_operator_window:
             item.setData(Qt.UserRole, zawody.id)
             listWidget.addItem(item)
         if not hasattr(self, 'lista_zawodow_menu'):
-            from ContextMenus import lista_zawodow_context_menu
-            self.lista_zawodow_menu = lista_zawodow_context_menu(self.UI)
+            from ContextMenus import Lista_zawodow_context_menu
+            self.lista_zawodow_menu = Lista_zawodow_context_menu(self.UI)
             self.lista_zawodow_menu.zawody_selected.connect(self.on_zawody_selected)
 
     def on_zawody_selected(self, zawody_obj):
+        """Otwiera wybrane zawody w panelu zarządzania."""
         self.UI.pageZawody_managment.zawody_data = zawody_obj
         self.UI.stackedWidget.setCurrentWidget(self.UI.pageZawody_managment)
         self.UI.tabWidget_zawody.clear()
         self.zawody_managment_page_entered()
 
     def dodaj_wynik_clicked(self):
+        """Dodaje nowy wiersz do tabeli wyników i uruchamia edycję pierwszej komórki."""
         tableWidget = self.UI.tabWidget_zawody.currentWidget()
         row_count = tableWidget.rowCount()
         tableWidget.insertRow(row_count)
@@ -202,6 +233,7 @@ class Signals_operator_window:
         tableWidget.itemChanged.connect(lambda item: self.on_table_item_changed(tableWidget, item, row_count))
 
     def on_table_item_changed(self, tableWidget, item, row):
+        """Waliduje wpis i obsługuje przepływ edycji pól oraz obliczanie wyniku."""
         value = item.text()
         is_shot_column = tableWidget.column(item) != 0
         validator = Wyniki_tab_validation(value, is_shot_column)
@@ -215,6 +247,7 @@ class Signals_operator_window:
             return
 
         if tableWidget.row(item) != row:
+            # Ignorujemy zmiany w innych wierszach
             return
 
         cur_col = tableWidget.column(item)
@@ -222,6 +255,7 @@ class Signals_operator_window:
         last_shot_col = tableWidget.columnCount() - 2
 
         if next_col > last_shot_col:
+            # Ostatni strzał - posortuj i oblicz sumę
             tableWidget.lista_wynikow_do_sortowania.append(int(value))
             tableWidget.lista_wynikow_do_sortowania.sort(reverse=True)
             score = 0
@@ -245,6 +279,7 @@ class Signals_operator_window:
         tableWidget.blockSignals(False)
 
     def set_lista_zawodnikow_completer(self):
+        """Konfiguruje `QCompleter` dla wyszukiwania zawodników i przygotowuje spacer pod popup."""
         self.lista_zawodnikow_model = QStringListModel()
         self.lista_zawodnikow_completer = QCompleter(self.lista_zawodnikow_model)
         self.lista_zawodnikow_completer.setCaseSensitivity(Qt.CaseInsensitive)
@@ -259,6 +294,7 @@ class Signals_operator_window:
         self.lista_zawodnikow_popup_spacer.hide()
 
     def clients_search_changed(self, lineEdit):
+        """Debounce + filtracja listy zawodników gdy użytkownik wpisuje tekst."""
         text = lineEdit.text()
         if len(text) < 3:
             self.lista_zawodnikow_model.setStringList([])

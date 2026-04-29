@@ -11,6 +11,8 @@ from Signals import Signals_operator_window, Signals_new_competition_dialog, Sig
 
 
 class Kreator_konkurencji_dialog(QDialog):
+    """Dialog tworzenia konkurencji — wrapper ładujący UI i podłączający sygnały."""
+
     def __init__(self, global_config=None, parent=None):
         super().__init__(parent)
         global_config = global_config if global_config is not None else Globals()
@@ -24,6 +26,8 @@ class Kreator_konkurencji_dialog(QDialog):
 
 
 class Nowe_zawody_dialog(QDialog):
+    """Dialog tworzenia zawodów — ustawia datę domyślną i podłącza sygnały."""
+
     def __init__(self, global_config=None, parent=None):
         super().__init__(parent)
         global_config = global_config if global_config is not None else Globals()
@@ -41,6 +45,8 @@ class Nowe_zawody_dialog(QDialog):
 
 
 class Operator_Window(QMainWindow):
+    """Główne okno aplikacji dla operatora — wrapper ładujący UI i inicjalizujący logikę."""
+
     def __init__(self, global_config=None):
         super().__init__()
         global_config = global_config if global_config is not None else Globals()

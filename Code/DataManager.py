@@ -1,3 +1,11 @@
+"""Moduł zarządzający modelami danych i dostępem do bazy danych.
+Zawiera klasy modelowe i menedżery danych wykorzystywane przez UI.
+
+Klasy:
+ - `Konkurencja`, `Zawody` - proste modele danych
+ - `Konkurencja_data_manager`, `Zawody_data_manager`, `Client_data_manager` - operacje DB
+"""
+
 import datetime
 
 from Globals import Globals
@@ -5,6 +13,8 @@ Globals.setMainDirectory()
 
 
 class Konkurencja:
+    """Reprezentuje konkurencję (nazwa oraz liczba strzałów)."""
+
     def __init__(self, name=None, shots_quantity=None):
         self.id = None
         self.name = name
@@ -12,6 +22,11 @@ class Konkurencja:
 
 
 class Konkurencja_data_manager:
+    """Menedżer dostępu do tabeli `konkurencje_lista`.
+
+    Metody zwracają obiekty `Konkurencja` lub `None`.
+    """
+
     def __init__(self, db=None):
         self.database = db if db is not None else Globals().database
 
@@ -52,6 +67,8 @@ konkurencja_data_manager = Konkurencja_data_manager()
 
 
 class Zawody:
+    """Reprezentuje zawody: nazwa, data/czas i przypisane konkurencje."""
+
     def __init__(self):
         self.id = None
         self.nazwa = None
@@ -60,6 +77,8 @@ class Zawody:
 
 
 class Zawody_data_manager:
+    """Menedżer dostępu do tabeli `zawody_lista` i linków do konkurencji."""
+
     def __init__(self, db=None):
         self.database = db if db is not None else Globals().database
 
@@ -71,6 +90,7 @@ class Zawody_data_manager:
         zawody = Zawody()
         zawody.id = zawody_id
         zawody.nazwa = result[0][0]
+        # Tworzymy obiekt datetime na podstawie pól godzina i data
         zawody.dateTime = datetime.datetime.strptime(f"{result[0][2]} {result[0][1]}", Globals.TIMESTAMP_FORMAT_PY)
         zawody.konkurencje = self.get_konkurencje_assigned_to_zawody(zawody_id)
         return zawody
@@ -88,6 +108,8 @@ class Zawody_data_manager:
         return zawody
 
     def get_all_zawody(self):
+        """Zwraca słownik `nazwa -> Zawody` dla wszystkich zawodów."""
+
         results = self.database.query("SELECT id FROM zawody_lista")
         if not results:
             return None
@@ -99,6 +121,8 @@ class Zawody_data_manager:
         return zawody_dict
 
     def insert_zawody(self, nazwa, dateTime, konkurencje):
+        """Dodaje nowe zawody i linkuje wybrane konkurencje."""
+
         dt = datetime.datetime.strptime(dateTime, Globals.TIMESTAMP_FORMAT_PY)
         query = "INSERT INTO zawody_lista (nazwa, data, godzina) VALUES (?, ?, ?)"
         latest_id = self.database.query(query, (nazwa, dt.strftime(Globals.DATE_FORMAT_PY), dt.strftime(Globals.TIME_FORMAT_PY)))
@@ -110,6 +134,8 @@ class Zawody_data_manager:
         return self.get_zawody_by_id(latest_id)
 
     def get_konkurencje_assigned_to_zawody(self, zawody_id):
+        """Zwraca słownik przypisanych konkurencji dla podanego `zawody_id`."""
+
         query = "SELECT id_konkurencji FROM \"zawody-konkurencje_link\" WHERE id_zawodow = ?"
         result = self.database.query(query, (zawody_id,))
         if not result:
@@ -126,6 +152,11 @@ zawody_data_manager = Zawody_data_manager()
 
 
 class Client_data_manager:
+    """Menedżer operacji na tabeli `zawodnicy`.
+
+    `get_clients(filter)` zwraca listę słowników z polami: id, imie, nazwisko, rocznik.
+    """
+
     def __init__(self, db=None):
         self.database = db if db is not None else Globals().database
 
