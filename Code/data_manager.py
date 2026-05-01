@@ -74,11 +74,11 @@ class KonkurencjaDataManager:
 
     def get_all_konkurencje(self) -> dict[str, Konkurencja] | None:
         """Zwraca słownik `nazwa -> Konkurencja` dla wszystkich konkurencji."""
-        query = "SELECT nazwa, ilosc_strzalow FROM konkurencje_lista"
+        query = "SELECT id, nazwa, ilosc_strzalow FROM konkurencje_lista"
         results = self.database.query(query)
         if not results:
             return None
-        return {row[0]: self._from_row(row[0], row[1]) for row in results}
+        return {row[1]: self._from_row(row[1], row[2], row[0]) for row in results}
 
 
 konkurencja_data_manager = KonkurencjaDataManager()
@@ -154,14 +154,16 @@ class ZawodyDataManager:
         if not latest_id:
             return None
         # Linkowanie konkurencji do nowo utworzonych zawodów
-        link_query = "INSERT INTO \"zawody_konkurencje_link\" (zawody_id, konkurencja_id) VALUES (?, ?)"
+        link_query = "INSERT INTO zawody_konkurencje_link (zawody_id, konkurencja_id) VALUES (?, ?)"
+
         for konkurencja in konkurencje.values():
             self.database.query(link_query, (latest_id, konkurencja.id))
+
         return self.get_zawody_by_id(latest_id)
 
     def get_konkurencje_assigned_to_zawody(self, zawody_id: int) -> dict[str, Konkurencja]:
         """Zwraca słownik przypisanych konkurencji dla podanego `zawody_id`."""
-        query = "SELECT konkurencja_id FROM \"zawody_konkurencje_link\" WHERE zawody_id = ?"
+        query = "SELECT konkurencja_id FROM zawody_konkurencje_link WHERE zawody_id = ?"
         result = self.database.query(query, (zawody_id,))
         if not result:
             return {}

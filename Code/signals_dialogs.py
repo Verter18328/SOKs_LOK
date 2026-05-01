@@ -49,6 +49,8 @@ class SignalsNewCompetitionDialog(QObject):
         self.ui = ui
         self.parent_window = parent_window
         self.konkurencje: dict = {}
+        from context_menus import KonkurencjeListContextMenu
+        self.konkurencje_list_context_menu = KonkurencjeListContextMenu(self.ui)
         self.connect_signals()
         self.get_konkurencje()
 
@@ -64,7 +66,7 @@ class SignalsNewCompetitionDialog(QObject):
             return
         self.konkurencje = {k.name: k for k in konkurencje.values()}
         self._refresh_konkurencje_combobox()
-
+    
     def _refresh_konkurencje_combobox(self) -> None:
         self.ui.comboBox_konkurencje.clear()
         for konkurencja in self.konkurencje.values():
@@ -112,10 +114,10 @@ class SignalsNewCompetitionDialog(QObject):
         if not is_valid:
             QMessageBox.warning(self.ui, "Błąd", message)
             return
-
         zawody_obj = zawody_data_manager.insert_zawody(
             selected_nazwa, selected_datetime, selected_konkurencje
         )
+        
         self.zawody_created.emit(zawody_obj)
         self.ui.close()
 

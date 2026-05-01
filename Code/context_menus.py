@@ -7,7 +7,7 @@ Obsługiwane interakcje: prawy klik (menu kontekstowe) i podwójne kliknięcie.
 from globals import Globals
 Globals.set_main_directory()
 
-from PySide6.QtWidgets import QMenu
+from PySide6.QtWidgets import QMenu, QListWidgetItem
 from PySide6.QtCore import Qt, Signal, QObject
 
 from data_manager import zawody_data_manager
@@ -54,10 +54,8 @@ class ListaZawodowContextMenu(QObject):
 class KonkurencjeListContextMenu(QObject):
     """Menu kontekstowe dla listy konkurencji w dialogu tworzenia zawodów.
 
-    Emituje `konkurencja_selected` z obiektem `Konkurencja`.
     """
 
-    konkurencja_selected = Signal(object)
 
     def __init__(self, ui) -> None:
         super().__init__()
@@ -74,9 +72,9 @@ class KonkurencjeListContextMenu(QObject):
         usun_action = menu.addAction("Usuń")
         action = menu.exec(self.ui.konkurencje_list.mapToGlobal(position))
         if action == usun_action:
-            # TODO: usuń konkurencję z listy / DB
+            self.usun_konkurencje(selected_item)
             pass
 
-    def usun_konkurencje(self, konkurencja_id: int) -> None:
+    def usun_konkurencje(self, selected_item: QListWidgetItem) -> None:
         """Usuwa konkurencję — implementacja zależy od UI i logiki aplikacji."""
-        pass
+        self.ui.konkurencje_list.takeItem(self.ui.konkurencje_list.row(selected_item))
