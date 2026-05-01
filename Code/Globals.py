@@ -62,7 +62,10 @@ class Globals:
         ),
         'KREATOR_KONKURENCJI_DIALOG': os.path.abspath(
             os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'KreatorKonkurencji.ui')
-        )
+        ),
+        'ZAREJESTRUJ_SERIE_DIALOG': os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'ZarejestrujSerie.ui')
+        ),
     }
 
     RESOURCES_PATHS_DICT = {

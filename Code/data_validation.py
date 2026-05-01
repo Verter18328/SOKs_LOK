@@ -10,6 +10,7 @@ Każda klasa udostępnia atrybut `is_valid_result` — krotkę `(bool, str)`.
 
 import datetime
 
+from data_manager import seria_data_manager
 from globals import Globals
 
 Globals.set_main_directory()
@@ -18,6 +19,28 @@ Globals.set_main_directory()
 # ─── Stałe walidacyjne ─────────────────────────────────────────────────
 
 MAX_SHOTS: int = 99
+
+
+class ZarejestrujSerieDataValidation:
+    """Waliduje dane z formularza zarejestrowania serii."""
+    def __init__(self, imie: str, nazwisko: str, rocznik: str) -> None:
+        self.imie = imie
+        self.nazwisko = nazwisko
+        self.rocznik = rocznik
+        self.is_valid_result: tuple[bool, str] = self.is_valid()
+    
+    def is_valid(self) -> tuple[bool, str]:
+        """Sprawdza poprawność danych zarejestrowania serii."""
+        if not self.imie.strip():
+            return False, "Imię nie może być puste."
+        if not self.nazwisko.strip():
+            return False, "Nazwisko nie może być puste."
+        if not self.rocznik.isdigit() or int(self.rocznik) <= 0:
+            return False, "Rocznik musi być liczbą całkowitą."
+        if int(self.rocznik) <= 0:
+            return False, "Rocznik nie może być ujemny."
+        return True, "Dane są poprawne."
+
 
 
 class NewZawodyDataValidation:
@@ -68,9 +91,9 @@ class NewZawodyDataValidation:
 class NewKonkurencjaDataValidation:
     """Waliduje nazwę i liczbę strzałów dla nowej konkurencji."""
 
-    def __init__(self, shots_quantity: int, name: str) -> None:
+    def __init__(self, shots_quantity: int, nr_serii: int) -> None:
         self.shots_quantity = shots_quantity
-        self.name = name
+        self.nr_serii = nr_serii
         self.is_valid_result: tuple[bool, str] = self.is_valid()
 
     def is_valid(self) -> tuple[bool, str]:
@@ -79,8 +102,10 @@ class NewKonkurencjaDataValidation:
             return False, "Liczba strzałów musi być dodatnią liczbą całkowitą."
         if self.shots_quantity > MAX_SHOTS:
             return False, f"Liczba strzałów nie może przekraczać {MAX_SHOTS}."
-        if not self.name.strip():
-            return False, "Nazwa konkurencji nie może być pusta."
+        if not self.nr_serii.isdigit() or int(self.nr_serii) <= 0:
+            return False, "Nr serii musi być liczbą całkowitą."
+        if int(self.nr_serii) <= 0:
+            return False, "Nr serii nie może być ujemny."
         return True, "Dane są poprawne."
 
 
@@ -88,12 +113,14 @@ class WynikiTabValidation:
     """Walidator pojedynczego pola w tabeli wyników.
 
     `is_shot_column=True` oznacza, że oczekujemy liczby całkowitej (wynik strzału).
-    `is_shot_column=False` oznacza pole z nazwiskiem zawodnika.
+    `is_shot_column=False` oznacza pole z numerem serii.
     """
 
-    def __init__(self, value: str, is_shot_column: bool) -> None:
+    def __init__(self, value: str, is_shot_column: bool, zawody_id: int, konkurencja_id: int) -> None:
         self.value = value
         self.is_shot_column = is_shot_column
+        self.zawody_id = zawody_id
+        self.konkurencja_id = konkurencja_id
         self.is_valid_result: tuple[bool, str] = self.is_valid()
 
     def is_valid(self) -> tuple[bool, str]:
@@ -105,9 +132,15 @@ class WynikiTabValidation:
             if int(self.value) < 0:
                 return False, "Wynik strzału nie może być ujemny."
         else:
-            # Kolumna zawodnika — oczekujemy tekstu (nie liczby)
-            if not self.value.strip():
-                return False, "Nazwa zawodnika nie może być pusta."
-            if self.value.isdigit():
-                return False, "Nazwa zawodnika nie może być liczbą."
+            if not self.value.isdigit():
+                return False, "Numer serii musi być liczbą całkowitą."
+            if int(self.value) == 0:
+                return False, "Numer serii nie może być równy 0."
+            if int(self.value) < 0:
+                return False, "Numer serii nie może być ujemny."
+            if not self.does_seria_number_exist_for_konkurencja(int(self.value)):
+                return False, "Numer serii nie istnieje."
         return True, "Dane są poprawne."
+
+    def does_seria_number_exist_for_konkurencja(self, seria_number: int) -> bool:
+        return seria_data_manager.does_seria_number_exist_for_konkurencja(seria_number, self.zawody_id, self.konkurencja_id)

@@ -10,10 +10,11 @@ from PySide6.QtWidgets import QApplication, QDialog, QMainWindow
 from PySide6.QtCore import QDateTime
 from PySide6.QtGui import QIcon
 
+from data_manager import Konkurencja, Zawody
 from globals import Globals
 Globals.set_main_directory()
 import Resources.resources_rc
-from signals_dialogs import SignalsKreatorKonkurencjiDialog, SignalsNewCompetitionDialog
+from signals_dialogs import SignalsKreatorKonkurencjiDialog, SignalsNewCompetitionDialog, SignalsZarejestrujSerieDialog
 from signals_operator_window import SignalsOperatorWindow
 
 
@@ -30,6 +31,18 @@ def _setup_window(widget, global_config: Globals, ui_key: str, title: str) -> No
     widget.ui.setWindowTitle(title)
     widget.ui.setWindowIcon(QIcon(global_config.RESOURCES_PATHS_DICT["LOGO_IMAGE"]))
 
+class ZarejestrujSerieDialog(QDialog):
+    """Dialog zarejestrowania serii — wrapper ładujący UI i podłączający sygnały."""
+
+    def __init__(self, global_config: Globals | None = None, parent=None, zawody: Zawody | None = None, konkurencja: Konkurencja | None = None) -> None:
+        super().__init__(parent)
+        global_config = global_config if global_config is not None else Globals()
+        _setup_window(self, global_config, "ZAREJESTRUJ_SERIE_DIALOG", "Zarejestruj serię")
+        self.signals = SignalsZarejestrujSerieDialog(self.ui, zawody=zawody, konkurencja=konkurencja, parent_window=self.parent())
+
+    def show_dialog(self) -> None:
+        """Wyświetla dialog."""
+        self.ui.show()
 
 class KreatorKonkurencjiDialog(QDialog):
     """Dialog tworzenia konkurencji — wrapper ładujący UI i podłączający sygnały."""

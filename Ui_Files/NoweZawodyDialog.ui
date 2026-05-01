@@ -26,7 +26,7 @@
    <item row="10" column="0">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
-      <set>QDialogButtonBox::StandardButton::NoButton</set>
+      <set>QDialogButtonBox::NoButton</set>
      </property>
     </widget>
    </item>
@@ -53,11 +53,8 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="alignment">
-        <set>Qt::AlignmentFlag::AlignCenter</set>
-       </property>
        <property name="buttonSymbols">
-        <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+        <enum>QAbstractSpinBox::UpDownArrows</enum>
        </property>
        <property name="showGroupSeparator" stdset="0">
         <bool>false</bool>
@@ -75,7 +72,7 @@
    <item row="10" column="10">
     <widget class="QDialogButtonBox" name="buttonBox_zawody">
      <property name="standardButtons">
-      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Save</set>
+      <set>QDialogButtonBox::NoButton</set>
      </property>
     </widget>
    </item>
@@ -143,7 +140,7 @@
         </sizepolicy>
        </property>
        <property name="layoutDirection">
-        <enum>Qt::LayoutDirection::RightToLeft</enum>
+        <enum>Qt::LeftToRight</enum>
        </property>
        <property name="text">
         <string>Dodaj</string>

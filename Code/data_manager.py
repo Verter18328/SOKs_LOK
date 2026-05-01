@@ -3,8 +3,8 @@
 Zawiera klasy modelowe i menedżery danych wykorzystywane przez UI.
 
 Klasy:
- - `Konkurencja`, `Zawody` — proste modele danych
- - `KonkurencjaDataManager`, `ZawodyDataManager`, `ClientDataManager` — operacje DB
+ - `Konkurencja`, `Zawody`, `Zawodnik`, `Seria` — proste modele danych
+ - `KonkurencjaDataManager`, `ZawodyDataManager`, `ZawodnikDataManager`, `SeriaDataManager`, `WynikDataManager` — operacje DB
 """
 
 import datetime
@@ -17,6 +17,98 @@ Globals.set_main_directory()
 # ═══════════════════════════════════════════════════════════════════════
 #  Model i menedżer: Konkurencja
 # ═══════════════════════════════════════════════════════════════════════
+
+class WynikDataManager:
+    """Menedżer dostępu do tabeli `wyniki`.
+    """
+    def __init__(self, db=None) -> None:
+        self.database = db if db is not None else Globals().database
+
+    def insert_wynik(self, seria_id: int, nr_strzalu: int, punkty: int) -> int | None:
+        query = "INSERT INTO strzaly (start_id, nr_strzalu, punkty) VALUES (?, ?, ?)"
+        latest_id = self.database.query(query, (seria_id, nr_strzalu, punkty))
+        if not latest_id:
+            return None
+        return latest_id
+
+wynik_data_manager = WynikDataManager()
+
+class Seria:
+    """Reprezentuje serię (numer serii, zawodnik, zawody, konkurencja)."""
+    def __init__(
+        self,
+        number: int,
+        zawodnik: Zawodnik,
+        zawody: Zawody,
+        konkurencja: Konkurencja,
+        *,
+        id: int | None = None,
+    ) -> None:
+        self.id = id
+        self.number = number
+        self.zawodnik = zawodnik
+        self.zawody = zawody
+        self.konkurencja = konkurencja
+
+
+class SeriaDataManager:
+    """Menedżer dostępu do tabeli `starty`.
+    """
+    def __init__(self, db=None) -> None:
+        self.database = db if db is not None else Globals().database
+
+    def get_last_seria_number_for_konkurencja(self, konkurencja_id: int, zawody_id: int) -> int:
+        query = "SELECT MAX(nr_serii) FROM starty WHERE konkurencja_id = ? AND zawody_id = ?"
+        result = self.database.query(query, (konkurencja_id, zawody_id))
+        if result is None or result[0][0] is None or result[0][0] == "":
+            return 0
+        return int(result[0][0])
+
+    def insert_seria(self, number: int, zawodnik: Zawodnik, zawody: Zawody, konkurencja: Konkurencja) -> Seria:
+        query = "INSERT INTO starty (nr_serii, zawodnik_id, zawody_id, konkurencja_id) VALUES (?, ?, ?, ?)"
+        latest_id = self.database.query(query, (number, zawodnik.id, zawody.id, konkurencja.id))
+        if not latest_id:
+            return None
+        return self.get_seria_by_id(latest_id)
+
+    def does_seria_number_exist_for_konkurencja(self, seria_number: int, zawody_id: int, konkurencja_id: int) -> bool:
+        query = "SELECT EXISTS(SELECT 1 FROM starty WHERE nr_serii = ? AND zawody_id = ? AND konkurencja_id = ?)"
+        result = self.database.query(query, (seria_number, zawody_id, konkurencja_id))
+        return bool(result[0][0]) if result else False
+
+    def get_seria_by_id(self, seria_id: int) -> Seria | None:
+        query = "SELECT id, nr_serii, zawodnik_id, zawody_id, konkurencja_id FROM starty WHERE id = ?"
+        result = self.database.query(query, (seria_id,))
+        if not result:
+            return None
+        row = result[0]
+        return self._from_row(row[0], row[1], row[2], row[3], row[4])
+
+    def get_seria_by_number_and_konkurencja_and_zawody(self, seria_number: int, zawody_id: int, konkurencja_id: int) -> Seria | None:
+        query = "SELECT id FROM starty WHERE nr_serii = ? AND zawody_id = ? AND konkurencja_id = ?"
+        result = self.database.query(query, (seria_number, zawody_id, konkurencja_id))
+        if not result:
+            return None
+        return self.get_seria_by_id(result[0][0])
+
+
+    def _from_row(
+        self,
+        start_id: int,
+        nr_serii: int,
+        zawodnik_id: int,
+        zawody_id: int,
+        konkurencja_id: int,
+    ) -> Seria:
+        zawodnik = zawodnik_data_manager.get_zawodnik_by_id(zawodnik_id)
+        zawody = zawody_data_manager.get_zawody_by_id(zawody_id)
+        konkurencja = konkurencja_data_manager.get_konkurencja_by_id(konkurencja_id)
+        if not zawodnik or not zawody or not konkurencja:
+            return None
+        return Seria(nr_serii, zawodnik, zawody, konkurencja, id=start_id)
+
+
+seria_data_manager = SeriaDataManager()
 
 
 class Konkurencja:
@@ -179,20 +271,45 @@ zawody_data_manager = ZawodyDataManager()
 
 
 # ═══════════════════════════════════════════════════════════════════════
-#  Menedżer: Zawodnicy (klienci)
+#  Model i menedżer: Zawodnik
 # ═══════════════════════════════════════════════════════════════════════
 
 
-class ClientDataManager:
+class Zawodnik:
+    """Reprezentuje wiersz z tabeli `zawodnicy` (id, imię, nazwisko, rocznik)."""
+
+    def __init__(
+        self,
+        imie: str | None = None,
+        nazwisko: str | None = None,
+        rocznik: str | None = None,
+    ) -> None:
+        self.id: int | None = None
+        self.imie = imie if imie is not None else ""
+        self.nazwisko = nazwisko if nazwisko is not None else ""
+        self.rocznik = rocznik if rocznik is not None else ""
+
+    def label(self) -> str:
+        """Etykieta do list i pola wyszukiwania: „Imię Nazwisko”."""
+        return f"{self.imie} {self.nazwisko}".strip()
+
+    @staticmethod
+    def _from_row(row_id: int, imie: str, nazwisko: str, rocznik: str) -> "Zawodnik":
+        z = Zawodnik(imie, nazwisko, rocznik)
+        z.id = row_id
+        return z
+
+
+class ZawodnikDataManager:
     """Menedżer operacji na tabeli `zawodnicy`.
 
-    `get_clients(filter_text)` zwraca listę słowników z polami: id, imie, nazwisko, rocznik.
+    Metody zwracają obiekty `Zawodnik` lub `None` / listę modeli tam, gdzie to ma sens.
     """
 
     def __init__(self, db=None) -> None:
         self.database = db if db is not None else Globals().database
 
-    def get_clients(self, filter_text: str | None = None) -> list[dict] | None:
+    def get_zawodnicy(self, filter_text: str | None = None) -> list[Zawodnik] | None:
         """Pobiera listę zawodników, opcjonalnie filtrowaną po imieniu/nazwisku."""
         if filter_text:
             query = """SELECT * FROM zawodnicy
@@ -201,29 +318,29 @@ class ClientDataManager:
                        LIMIT 30"""
             params = (f"%{filter_text}%",)
         else:
-            query = "SELECT * FROM zawodnicy"
+            query = "SELECT * FROM zawodnicy ORDER BY nazwisko, imie"
             params = ()
         results = self.database.query(query, params)
         if not results:
             return None
-        return [
-            {'id': row[0], 'imie': row[1], 'nazwisko': row[2], 'rocznik': row[3]}
-            for row in results
-        ]
+        return [Zawodnik._from_row(row[0], row[1], row[2], row[3]) for row in results]
 
-    def get_id_from_name(self, imie: str, nazwisko: str) -> int | None:
-        """Zwraca ID zawodnika na podstawie imienia i nazwiska."""
-        query = "SELECT id FROM zawodnicy WHERE imie = ? AND nazwisko = ?"
-        results = self.database.query(query, (imie, nazwisko))
-        return results[0][0] if results else None
+    def get_id_from_name_and_birth_year(self, imie: str, nazwisko: str, rocznik: str) -> int | None:
+        """Zwraca ID zawodnika na podstawie imienia, nazwiska i roku urodzenia."""
+        query = "SELECT id FROM zawodnicy WHERE imie = ? AND nazwisko = ? AND rocznik = ?"
+        results = self.database.query(query, (imie, nazwisko, rocznik))
+        if not results:
+            return None
+        return int(results[0][0])
 
-    def get_name_from_id(self, client_id: int) -> dict[str, str] | None:
-        """Zwraca słownik `{imie, nazwisko}` dla podanego ID zawodnika."""
-        query = "SELECT imie, nazwisko FROM zawodnicy WHERE id = ?"
-        results = self.database.query(query, (client_id,))
-        if results:
-            return {'imie': results[0][0], 'nazwisko': results[0][1]}
-        return None
+    def get_zawodnik_by_id(self, zawodnik_id: int) -> Zawodnik | None:
+        """Zwraca pełny rekord zawodnika po ID lub None."""
+        query = "SELECT id, imie, nazwisko, rocznik FROM zawodnicy WHERE id = ?"
+        results = self.database.query(query, (zawodnik_id,))
+        if not results:
+            return None
+        row = results[0]
+        return Zawodnik._from_row(row[0], row[1], row[2], row[3])
 
 
-client_data_manager = ClientDataManager()
+zawodnik_data_manager = ZawodnikDataManager()

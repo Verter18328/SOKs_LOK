@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from data_manager import client_data_manager, zawody_data_manager
+from data_manager import konkurencja_data_manager, zawody_data_manager, zawodnik_data_manager, Seria, seria_data_manager, wynik_data_manager
 from data_validation import WynikiTabValidation
 
 
@@ -48,19 +48,28 @@ class SignalsOperatorWindow:
         self.ui.lineEditWyszukiwanie_zawodnikow.textChanged.connect(
             lambda: self.clients_search_changed(self.ui.lineEditWyszukiwanie_zawodnikow)
         )
+        self.ui.newZawodnik_pushButton.clicked.connect(self.zarejestruj_serie_triggered)
 
+    def zarejestruj_serie_triggered(self) -> None:
+        from operator_ui_handler import ZarejestrujSerieDialog
+        zawody = self.ui.pageZawody_managment.zawody_data
+        konkurencja = konkurencja_data_manager.get_konkurencja_by_name(self.ui.tabWidget_zawody.tabText(self.ui.tabWidget_zawody.currentIndex()))
+        if zawody and konkurencja:
+            self.zarejestruj_serie_dialog = ZarejestrujSerieDialog(parent=self.ui, zawody=zawody, konkurencja=konkurencja)
+            self.zarejestruj_serie_dialog.show_dialog()
+    
     def exit_to_title_triggered(self) -> None:
         self.ui.stackedWidget.setCurrentWidget(self.ui.pageTitle)
 
     def action_lista_zawodnikow_triggered(self, filter_text: str | None = None) -> None:
         self.ui.stackedWidget.setCurrentWidget(self.ui.pageZawodnicy)
-        zawodnicy = client_data_manager.get_clients(filter=filter_text)
+        zawodnicy = zawodnik_data_manager.get_zawodnicy(filter_text=filter_text)
         if zawodnicy is None:
             return
-        zawodnicy.sort(key=lambda x: (x["nazwisko"], x["imie"]))
+        zawodnicy.sort(key=lambda z: (z.nazwisko, z.imie))
         self.ui.listaZawodnikow.clear()
         for zawodnik in zawodnicy:
-            self.ui.listaZawodnikow.addItem(f"{zawodnik['imie']} {zawodnik['nazwisko']}")
+            self.ui.listaZawodnikow.addItem(zawodnik.label())
 
     def action_nowe_zawody_triggered(self) -> None:
         from operator_ui_handler import NoweZawodyDialog
@@ -114,7 +123,7 @@ class SignalsOperatorWindow:
             self.ui.tabWidget_zawody.addTab(table_widget, konkurencja.name)
             table_widget.setColumnCount(konkurencja.shots_quantity + 2)
             table_widget.setHorizontalHeaderLabels(
-                ["Zawodnik"] + [f"Strzał {i + 1}" for i in range(konkurencja.shots_quantity)] + ["Razem"]
+                ["Nr serii"] + [f"Strzał {i + 1}" for i in range(konkurencja.shots_quantity)] + ["Razem"]
             )
             for col in range(table_widget.columnCount()):
                 table_widget.horizontalHeader().setSectionResizeMode(col, QHeaderView.Stretch)
@@ -138,15 +147,23 @@ class SignalsOperatorWindow:
     def on_table_item_changed(self, table_widget, item, row: int) -> None:
         value = item.text()
         is_shot_column = table_widget.column(item) != 0
-
-        validator = WynikiTabValidation(value, is_shot_column)
-        if not validator.is_valid_result[0]:
-            QMessageBox.warning(table_widget, "Błąd", validator.is_valid_result[1])
-            table_widget.blockSignals(True)
-            item.setText("")
-            table_widget.setCurrentCell(row, table_widget.column(item))
-            table_widget.editItem(item)
-            table_widget.blockSignals(False)
+        if table_widget.column(item) == 0 and value != "":
+            self.nr_serii = int(value)
+        zawody_id = self.ui.pageZawody_managment.zawody_data.id
+        if not zawody_id:
+            QMessageBox.warning(table_widget, "Błąd", "Zawody nie znalezione")
+            return
+        konkurencja = konkurencja_data_manager.get_konkurencja_by_name(
+            self.ui.tabWidget_zawody.tabText(self.ui.tabWidget_zawody.currentIndex())
+        )
+        if not konkurencja:
+            QMessageBox.warning(table_widget, "Błąd", "Konkurencja nie znaleziona")
+            return
+        seria = None
+        if hasattr(self, "nr_serii") and self.nr_serii is not None:
+            seria = seria_data_manager.get_seria_by_number_and_konkurencja_and_zawody(self.nr_serii, zawody_id, konkurencja.id)
+        if not seria and hasattr(self, "nr_serii") and self.nr_serii is not None:
+            QMessageBox.warning(table_widget, "Błąd", "Seria nie znaleziona")
             return
 
         if table_widget.row(item) != row:
@@ -165,6 +182,7 @@ class SignalsOperatorWindow:
                 sorted_value = str(table_widget.lista_wynikow_do_sortowania[col - 1])
                 table_widget.item(row, col).setText(sorted_value)
                 score += int(sorted_value)
+                wynik_id = wynik_data_manager.insert_wynik(seria.id, col, sorted_value)
             table_widget.setItem(row, table_widget.columnCount() - 1, QTableWidgetItem(str(score)))
             table_widget.blockSignals(False)
             table_widget.itemChanged.disconnect()
@@ -203,13 +221,10 @@ class SignalsOperatorWindow:
             self.action_lista_zawodnikow_triggered(filter_text=None)
             return
 
-        clients = client_data_manager.get_clients(filter=text) or []
-        names = [f"{c['imie']} {c['nazwisko']}" for c in clients]
+        zawodnicy = zawodnik_data_manager.get_zawodnicy(filter_text=text) or []
+        names = [z.label() for z in zawodnicy]
         self.lista_zawodnikow_model.setStringList(names)
-        if names:
-            self.lista_zawodnikow_popup_spacer.show()
-        else:
-            self.lista_zawodnikow_popup_spacer.hide()
+        self.lista_zawodnikow_popup_spacer.setVisible(bool(zawodnicy))
         self.action_lista_zawodnikow_triggered(filter_text=text)
 
         self.timer.stop()

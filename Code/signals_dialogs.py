@@ -1,5 +1,6 @@
 """Obsługa sygnałów dla dialogów (kreator konkurencji i nowe zawody)."""
 
+from Code import data_manager
 from globals import Globals
 
 Globals.set_main_directory()
@@ -7,8 +8,48 @@ Globals.set_main_directory()
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox
 
-from data_manager import konkurencja_data_manager, zawody_data_manager
-from data_validation import NewKonkurencjaDataValidation, NewZawodyDataValidation
+from data_manager import konkurencja_data_manager, seria_data_manager, zawody_data_manager, zawodnik_data_manager, Zawodnik, Zawody, Konkurencja, Seria
+from data_validation import NewKonkurencjaDataValidation, NewZawodyDataValidation, ZarejestrujSerieDataValidation
+
+class SignalsZarejestrujSerieDialog(QObject):
+    """Obsługa sygnałów w dialogu zarejestrowania serii."""
+
+    zarejestrowana_seria = Signal(Zawodnik)
+    def __init__(self, ui, zawody: Zawody | None = None, konkurencja: Konkurencja | None = None, parent_window=None) -> None:
+        super().__init__()
+        self.ui = ui
+        self.zawody = zawody
+        self.konkurencja = konkurencja
+        self.parent_window = parent_window
+        self.last_seria_number = seria_data_manager.get_last_seria_number_for_konkurencja(self.konkurencja.id, self.zawody.id)
+        self.seria_number = self.last_seria_number + 1
+        self.ui.seria_label.setText(f"Seria {self.seria_number}")
+        self.connect_signals()
+
+    def connect_signals(self) -> None:
+        self.ui.buttonBox.accepted.connect(self.accepted)
+        self.ui.buttonBox.rejected.connect(self.ui.close)
+
+    def accepted(self) -> None:
+        imie = self.ui.imie_lineEdit.text()
+        nazwisko = self.ui.nazwisko_lineEdit.text()
+        rocznik = self.ui.rocznik_lineEdit.text()
+        validator = ZarejestrujSerieDataValidation(imie, nazwisko, rocznik)
+        is_valid, message = validator.is_valid_result
+        if not is_valid:
+            QMessageBox.warning(self.ui, "Błąd", message)
+            return
+        zawodnik = zawodnik_data_manager.get_zawodnik_by_id(zawodnik_data_manager.get_id_from_name_and_birth_year(imie, nazwisko, rocznik))
+        if not zawodnik:
+            QMessageBox.warning(self.ui, "Błąd", "Zawodnik nie znaleziony")
+            return
+        seria = Seria(number=self.seria_number, zawodnik=zawodnik, zawody=self.zawody, konkurencja=self.konkurencja)
+        seria = seria_data_manager.insert_seria(self.seria_number, zawodnik, self.zawody, self.konkurencja)
+        if not seria:
+            QMessageBox.warning(self.ui, "Błąd", "Błąd podczas zapisu serii")
+            return
+        self.zarejestrowana_seria.emit(seria)
+        self.ui.close()
 
 
 class SignalsKreatorKonkurencjiDialog(QObject):
