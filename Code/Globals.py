@@ -73,7 +73,19 @@ class Globals:
 
     def __init__(self) -> None:
         """Inicjalizuje zasoby globalne używane przez aplikację."""
+        self._ensure_database_path()
         self.database = DatabaseConnection()
+        self.database.connect()
+        self.database.disconnect()
+
+    @classmethod
+    def _ensure_database_path(cls) -> None:
+        """Tworzy katalog i plik bazy, jeśli nie istnieją."""
+        db_dir = os.path.dirname(cls.DB_PATH)
+        os.makedirs(db_dir, exist_ok=True)
+        if not os.path.exists(cls.DB_PATH):
+            with open(cls.DB_PATH, "a", encoding="utf-8"):
+                pass
 
     @staticmethod
     def set_main_directory() -> None:
