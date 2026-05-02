@@ -1,6 +1,5 @@
 """Obsługa sygnałów dla dialogów (kreator konkurencji i nowe zawody)."""
 
-from Code import data_manager
 from globals import Globals
 
 Globals.set_main_directory()
@@ -14,7 +13,7 @@ from data_validation import NewKonkurencjaDataValidation, NewZawodyDataValidatio
 class SignalsZarejestrujSerieDialog(QObject):
     """Obsługa sygnałów w dialogu zarejestrowania serii."""
 
-    zarejestrowana_seria = Signal(Zawodnik)
+    zarejestrowana_seria = Signal(Seria)
     def __init__(self, ui, zawody: Zawody | None = None, konkurencja: Konkurencja | None = None, parent_window=None) -> None:
         super().__init__()
         self.ui = ui
@@ -41,10 +40,12 @@ class SignalsZarejestrujSerieDialog(QObject):
             return
         zawodnik = zawodnik_data_manager.get_zawodnik_by_id(zawodnik_data_manager.get_id_from_name_and_birth_year(imie, nazwisko, rocznik))
         if not zawodnik:
-            QMessageBox.warning(self.ui, "Błąd", "Zawodnik nie znaleziony")
-            return
+            zawodnik = zawodnik_data_manager.insert_zawodnik(imie, nazwisko, rocznik)
+            if not zawodnik:
+                QMessageBox.warning(self.ui, "Błąd", "Błąd podczas zapisu zawodnika")
+                return
         seria = Seria(number=self.seria_number, zawodnik=zawodnik, zawody=self.zawody, konkurencja=self.konkurencja)
-        seria = seria_data_manager.insert_seria(self.seria_number, zawodnik, self.zawody, self.konkurencja)
+        seria = seria_data_manager.insert_seria(seria.number, zawodnik, self.zawody, self.konkurencja)
         if not seria:
             QMessageBox.warning(self.ui, "Błąd", "Błąd podczas zapisu serii")
             return

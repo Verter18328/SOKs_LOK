@@ -30,6 +30,7 @@ class SignalsOperatorWindow:
 
     def __init__(self, ui) -> None:
         self.ui = ui
+        self.sort_order: bool = False
         self.set_lista_zawodnikow_completer()
         self.timer = QTimer()
         self.timer.setSingleShot(True)
@@ -49,6 +50,9 @@ class SignalsOperatorWindow:
             lambda: self.clients_search_changed(self.ui.lineEditWyszukiwanie_zawodnikow)
         )
         self.ui.newZawodnik_pushButton.clicked.connect(self.zarejestruj_serie_triggered)
+        self.ui.sort_seria_button.clicked.connect(self.sort_seria_button_clicked)
+        self.ui.sort_miejsce_button.clicked.connect(self.sort_miejsce_button_clicked)
+
 
     def zarejestruj_serie_triggered(self) -> None:
         from operator_ui_handler import ZarejestrujSerieDialog
@@ -108,6 +112,15 @@ class SignalsOperatorWindow:
         self.ui.tabWidget_zawody.clear()
         self.zawody_management_page_entered()
 
+
+    def sort_seria_button_clicked(self) -> None:
+        self.sort_order = False
+        self.sort_wyniki(self.ui.tabWidget_zawody.currentWidget(), self.sort_order)
+
+    def sort_miejsce_button_clicked(self) -> None:
+        self.sort_order = True
+        self.sort_wyniki(self.ui.tabWidget_zawody.currentWidget(), self.sort_order)
+
     def zawody_management_page_entered(self) -> None:
         zawody = getattr(self.ui.pageZawody_managment, "zawody_data", None)
         if not zawody:
@@ -127,7 +140,21 @@ class SignalsOperatorWindow:
             )
             for col in range(table_widget.columnCount()):
                 table_widget.horizontalHeader().setSectionResizeMode(col, QHeaderView.Stretch)
-
+            all_serie = seria_data_manager.get_all_series_by_zawody_and_konkurencja(zawody.id, konkurencja.id)
+            if not all_serie:
+                continue
+            for seria in all_serie:
+                wyniki = wynik_data_manager.get_all_wyniki_by_seria_id(seria.id)
+                if not wyniki:
+                    continue
+                row = table_widget.rowCount()
+                table_widget.insertRow(row)
+                table_widget.setItem(row, 0, QTableWidgetItem(str(seria.number)))
+                for wynik in wyniki:
+                    table_widget.setItem(row, wynik.nr_strzalu, QTableWidgetItem(str(wynik.punkty)))
+                table_widget.setItem(row, table_widget.columnCount() - 1, QTableWidgetItem(str(sum(wynik.punkty for wynik in wyniki))))
+            self.sort_order = False
+            self.sort_wyniki(table_widget, self.sort_order)
     def dodaj_wynik_clicked(self) -> None:
         table_widget = self.ui.tabWidget_zawody.currentWidget()
         row_count = table_widget.rowCount()
@@ -147,18 +174,31 @@ class SignalsOperatorWindow:
     def on_table_item_changed(self, table_widget, item, row: int) -> None:
         value = item.text()
         is_shot_column = table_widget.column(item) != 0
-        if table_widget.column(item) == 0 and value != "":
-            self.nr_serii = int(value)
-        zawody_id = self.ui.pageZawody_managment.zawody_data.id
-        if not zawody_id:
+
+        zawody = getattr(self.ui.pageZawody_managment, "zawody_data", None)
+        if not zawody or not getattr(zawody, "id", None):
             QMessageBox.warning(table_widget, "Błąd", "Zawody nie znalezione")
             return
+        zawody_id = zawody.id
         konkurencja = konkurencja_data_manager.get_konkurencja_by_name(
             self.ui.tabWidget_zawody.tabText(self.ui.tabWidget_zawody.currentIndex())
         )
         if not konkurencja:
             QMessageBox.warning(table_widget, "Błąd", "Konkurencja nie znaleziona")
             return
+
+        validator = WynikiTabValidation(value, is_shot_column, zawody_id, konkurencja.id)
+        is_valid, message = validator.is_valid_result
+        if not is_valid:
+            QMessageBox.warning(table_widget, "Błąd", message)
+            table_widget.blockSignals(True)
+            item.setText("")
+            table_widget.setCurrentCell(row, table_widget.column(item))
+            table_widget.editItem(item)
+            table_widget.blockSignals(False)
+            return
+        if table_widget.column(item) == 0 and value != "":
+            self.nr_serii = int(value)
         seria = None
         if hasattr(self, "nr_serii") and self.nr_serii is not None:
             seria = seria_data_manager.get_seria_by_number_and_konkurencja_and_zawody(self.nr_serii, zawody_id, konkurencja.id)
@@ -188,6 +228,7 @@ class SignalsOperatorWindow:
             table_widget.itemChanged.disconnect()
             table_widget.clearSelection()
             table_widget.clearFocus()
+            self.sort_wyniki(table_widget, self.sort_order)
             return
 
         if is_shot_column:
@@ -196,6 +237,74 @@ class SignalsOperatorWindow:
         table_widget.setCurrentCell(row, next_col)
         table_widget.editItem(table_widget.item(row, next_col))
         table_widget.blockSignals(False)
+
+
+    def sort_wyniki(self, table_widget: QTableWidget, sort_order: bool) -> None:
+        """Sortuje wiersze tabeli wyników.
+
+        - ``sort_order`` False — rosnąco po numerze serii (kolumna 0).
+        - ``sort_order`` True — malejąco po sumie (ostatnia kolumna); przy remisie sum
+          porównanie leksykograficzne strzałów w kolumnach 1…N (już od najlepszego do
+          najgorszego — ten sam układ co przed zapisem do DB).
+        """
+        rows = table_widget.rowCount()
+        cols = table_widget.columnCount()
+        if rows < 2 or cols < 2:
+            return
+
+        total_col = cols - 1
+        grid: list[list[str]] = []
+        for r in range(rows):
+            row_texts: list[str] = []
+            for c in range(cols):
+                cell = table_widget.item(r, c)
+                row_texts.append(cell.text() if cell is not None else "")
+            grid.append(row_texts)
+
+        def nr_serii_key(texts: list[str]) -> int:
+            s = texts[0].strip()
+            if not s:
+                return 0
+            try:
+                return int(s)
+            except ValueError:
+                return 0
+
+        def suma_key(texts: list[str]) -> int:
+            s = texts[total_col].strip()
+            if not s:
+                return 0
+            try:
+                return int(s)
+            except ValueError:
+                return 0
+
+        def strzaly_w_kolejnosci_do_remisu(texts: list[str]) -> tuple[int, ...]:
+            """Strzały kolumnami 1… (bez „Razem”) — kolejność już malejąca w UI / przed DB."""
+            out: list[int] = []
+            for c in range(1, total_col):
+                s = texts[c].strip()
+                out.append(int(s) if s.isdigit() else -1)
+            return tuple(out)
+
+        def ranking_po_sumie_i_przestrzelinach(texts: list[str]) -> tuple:
+            return (suma_key(texts),) + strzaly_w_kolejnosci_do_remisu(texts)
+
+        if sort_order:
+            grid.sort(key=ranking_po_sumie_i_przestrzelinach, reverse=True)
+        else:
+            grid.sort(key=nr_serii_key)
+
+        was_sorting = table_widget.isSortingEnabled()
+        table_widget.setSortingEnabled(False)
+        table_widget.blockSignals(True)
+        try:
+            for r in range(rows):
+                for c in range(cols):
+                    table_widget.setItem(r, c, QTableWidgetItem(grid[r][c]))
+        finally:
+            table_widget.blockSignals(False)
+            table_widget.setSortingEnabled(was_sorting)
 
     def set_lista_zawodnikow_completer(self) -> None:
         self.lista_zawodnikow_model = QStringListModel()

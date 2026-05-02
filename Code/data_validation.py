@@ -91,9 +91,9 @@ class NewZawodyDataValidation:
 class NewKonkurencjaDataValidation:
     """Waliduje nazwę i liczbę strzałów dla nowej konkurencji."""
 
-    def __init__(self, shots_quantity: int, nr_serii: int) -> None:
+    def __init__(self, shots_quantity: int, name: str) -> None:
         self.shots_quantity = shots_quantity
-        self.nr_serii = nr_serii
+        self.name = name
         self.is_valid_result: tuple[bool, str] = self.is_valid()
 
     def is_valid(self) -> tuple[bool, str]:
@@ -102,10 +102,8 @@ class NewKonkurencjaDataValidation:
             return False, "Liczba strzałów musi być dodatnią liczbą całkowitą."
         if self.shots_quantity > MAX_SHOTS:
             return False, f"Liczba strzałów nie może przekraczać {MAX_SHOTS}."
-        if not self.nr_serii.isdigit() or int(self.nr_serii) <= 0:
-            return False, "Nr serii musi być liczbą całkowitą."
-        if int(self.nr_serii) <= 0:
-            return False, "Nr serii nie może być ujemny."
+        if not self.name.strip():
+            return False, "Nazwa konkurencji nie może być pusta."
         return True, "Dane są poprawne."
 
 

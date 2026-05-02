@@ -18,8 +18,17 @@ Globals.set_main_directory()
 #  Model i menedżer: Konkurencja
 # ═══════════════════════════════════════════════════════════════════════
 
+
+class Wynik:
+    """Reprezentuje wynik (numer strzału, punkty)."""
+    def __init__(self, id: int, start_id: int, nr_strzalu: int, punkty: int) -> None:
+        self.id = id
+        self.start_id = start_id
+        self.nr_strzalu = nr_strzalu
+        self.punkty = punkty
+
 class WynikDataManager:
-    """Menedżer dostępu do tabeli `wyniki`.
+    """Menedżer dostępu do tabeli starty.
     """
     def __init__(self, db=None) -> None:
         self.database = db if db is not None else Globals().database
@@ -30,6 +39,15 @@ class WynikDataManager:
         if not latest_id:
             return None
         return latest_id
+
+    def get_all_wyniki_by_seria_id(self, seria_id: int) -> list[Wynik] | None:
+        query = "SELECT id, start_id, nr_strzalu, punkty FROM strzaly WHERE start_id = ?"
+        result = self.database.query(query, (seria_id,))
+        if not result:
+            return None
+        return [Wynik(row[0], row[1], row[2], row[3]) for row in result]
+
+
 
 wynik_data_manager = WynikDataManager()
 
@@ -90,7 +108,13 @@ class SeriaDataManager:
         if not result:
             return None
         return self.get_seria_by_id(result[0][0])
-
+    
+    def get_all_series_by_zawody_and_konkurencja(self, zawody_id: int, konkurencja_id: int) -> list[Seria] | None:
+        query = "SELECT id, nr_serii, zawodnik_id, zawody_id, konkurencja_id FROM starty WHERE zawody_id = ? AND konkurencja_id = ?"
+        result = self.database.query(query, (zawody_id, konkurencja_id))
+        if not result:
+            return None
+        return [self._from_row(row[0], row[1], row[2], row[3], row[4]) for row in result]
 
     def _from_row(
         self,
@@ -341,6 +365,14 @@ class ZawodnikDataManager:
             return None
         row = results[0]
         return Zawodnik._from_row(row[0], row[1], row[2], row[3])
+
+    def insert_zawodnik(self, imie: str, nazwisko: str, rocznik: str) -> Zawodnik | None:
+        """Wstawia nowego zawodnika do bazy i zwraca utworzony obiekt."""
+        query = "INSERT INTO zawodnicy (imie, nazwisko, rocznik) VALUES (?, ?, ?)"
+        latest_id = self.database.query(query, (imie, nazwisko, rocznik))
+        if not latest_id:
+            return None
+        return self.get_zawodnik_by_id(latest_id)
 
 
 zawodnik_data_manager = ZawodnikDataManager()
