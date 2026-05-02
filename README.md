@@ -38,8 +38,7 @@ SOKs_LOK/
 ├─ Ui_Files/            # pliki widoków Qt (.ui)
 ├─ Resources/           # zasoby statyczne (np. logo)
 ├─ Database_Files/      # lokalna baza danych SQLite (katalog tworzony przy pierwszym starcie)
-├─ requirements.txt   # punkt wejścia dla pip (deleguje do requirements-dev.txt)
-├─ requirements-dev.txt # PySide6 i zależności uruchomieniowe
+├─ requirements.txt   # zależności Python (pip install -r requirements.txt)
 └─ README.md
 ```
 
@@ -76,7 +75,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-(`requirements.txt` odwołuje się do `requirements-dev.txt`; instalowany jest m.in. **PySide6**.)
+(Instalowany jest m.in. **PySide6**.)
 
 ### 3. Uruchomienie aplikacji
 

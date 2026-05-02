@@ -1,2 +1,7 @@
-# Zależności uruchomieniowe — instalacja: pip install -r requirements.txt
--r requirements-dev.txt
+# SOKs_LOK — zależności uruchomieniowe (pip install -r requirements.txt)
+#
+# Python 3.11+ (patrz README.md).
+# Biblioteka standardowa: sqlite3, datetime, threading itd. — bez dodatkowych pakietów.
+#
+# Jeden pakiet zewnętrzny: PySide6 (QtWidgets, QtCore, QtGui, QtUiTools / QUiLoader, …).
+PySide6>=6.5.0
