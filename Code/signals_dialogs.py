@@ -7,13 +7,20 @@ Globals.set_main_directory()
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox
 
-from data_manager import konkurencja_data_manager, seria_data_manager, zawody_data_manager, zawodnik_data_manager, Zawodnik, Zawody, Konkurencja, Seria
+from data_manager import (
+    konkurencja_data_manager,
+    seria_data_manager,
+    zawody_data_manager,
+    zawodnik_data_manager,
+    Zawody,
+    Konkurencja,
+    Seria,
+)
 from data_validation import NewKonkurencjaDataValidation, NewZawodyDataValidation, ZarejestrujSerieDataValidation
 
 class SignalsZarejestrujSerieDialog(QObject):
     """Obsługa sygnałów w dialogu zarejestrowania serii."""
 
-    zarejestrowana_seria = Signal(Seria)
     def __init__(self, ui, zawody: Zawody | None = None, konkurencja: Konkurencja | None = None, parent_window=None) -> None:
         super().__init__()
         self.ui = ui
@@ -49,7 +56,6 @@ class SignalsZarejestrujSerieDialog(QObject):
         if not seria:
             QMessageBox.warning(self.ui, "Błąd", "Błąd podczas zapisu serii")
             return
-        self.zarejestrowana_seria.emit(seria)
         self.ui.close()
 
 

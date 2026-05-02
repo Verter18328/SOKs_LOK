@@ -102,7 +102,7 @@
          </widget>
         </item>
         <item row="3" column="0">
-         <widget class="QPushButton" name="pushButton">
+         <widget class="QPushButton" name="zamknij_zawody_button">
           <property name="text">
            <string>Zamknij zawody</string>
           </property>

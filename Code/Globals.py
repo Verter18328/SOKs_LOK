@@ -16,7 +16,6 @@ from PySide6.QtUiTools import QUiLoader
 
 # TODO:
 # - Dodać wyszukiwanie zawodów po nazwie i dacie w 'Zarządzaj zawodami'
-# - Obsługa wyników zawodów (tworzenie tabel dla zawodów w db)
 # - Ustawić maksymalną ilość wyników wyszukiwania zawodników i dodać przycisk 'Pokaż więcej wyników'
 # - Dodać dynamiczny rozmiar spacera w zależności od ilości wyników wyszukiwania zawodników
 # - Naprawić display zawodów w 'Zarządzaj zawodami'

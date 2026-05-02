@@ -1,13 +1,16 @@
 """Obsługa sygnałów i logika UI głównego okna operatora."""
 
+from functools import partial
+
 from globals import Globals
 
 Globals.set_main_directory()
 
-from PySide6.QtCore import Qt, QTimer, QStringListModel
+from PySide6.QtCore import QEvent, QObject, Qt, QTimer, QStringListModel
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QCompleter,
     QHeaderView,
     QListWidgetItem,
@@ -19,6 +22,26 @@ from PySide6.QtWidgets import (
 
 from data_manager import konkurencja_data_manager, zawody_data_manager, zawodnik_data_manager, Seria, seria_data_manager, wynik_data_manager
 from data_validation import WynikiTabValidation
+from ranking_utils import sort_wyniki_grid
+
+
+class _WynikRowEscapeFilter(QObject):
+    """Esc na edytorze komórki — pierwszy Esc anuluje cały wiersz (bez połykania przez QLineEdit)."""
+
+    def __init__(self, owner: "SignalsOperatorWindow") -> None:
+        super().__init__(owner.ui)
+        self._owner = owner
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() != QEvent.Type.KeyPress or event.key() != Qt.Key.Key_Escape:
+            return False
+        o = self._owner
+        if o._wynik_edit_table is None:
+            return False
+        if o.ui.stackedWidget.currentWidget() != o.ui.pageZawody_managment:
+            return False
+        QTimer.singleShot(0, o._cancel_incomplete_wynik_row)
+        return True
 
 
 class SignalsOperatorWindow:
@@ -31,6 +54,12 @@ class SignalsOperatorWindow:
     def __init__(self, ui) -> None:
         self.ui = ui
         self.sort_order: bool = False
+        self._wynik_edit_table: QTableWidget | None = None
+        self._wynik_edit_row: int | None = None
+        self._wynik_edit_tab_index: int = 0
+        self._wynik_item_changed_handler = None
+        self._wynik_esc_filter = _WynikRowEscapeFilter(self)
+        self._esc_filter_targets: list[QWidget] = []
         self.set_lista_zawodnikow_completer()
         self.timer = QTimer()
         self.timer.setSingleShot(True)
@@ -41,7 +70,7 @@ class SignalsOperatorWindow:
         self.ui.actionLista_zawodnikow.triggered.connect(self.action_lista_zawodnikow_triggered)
 
         self.ui.exit_To_title_shortcut = QShortcut(QKeySequence("Esc"), self.ui)
-        self.ui.exit_To_title_shortcut.activated.connect(self.exit_to_title_triggered)
+        self.ui.exit_To_title_shortcut.activated.connect(self._escape_shortcut_triggered)
 
         self.ui.actionNowe_zawody.triggered.connect(self.action_nowe_zawody_triggered)
         self.ui.actionZarzadzanie_zawodami.triggered.connect(self.zarzadzanie_zawodami_triggered)
@@ -52,9 +81,137 @@ class SignalsOperatorWindow:
         self.ui.newZawodnik_pushButton.clicked.connect(self.zarejestruj_serie_triggered)
         self.ui.sort_seria_button.clicked.connect(self.sort_seria_button_clicked)
         self.ui.sort_miejsce_button.clicked.connect(self.sort_miejsce_button_clicked)
+        self.ui.tabWidget_zawody.currentChanged.connect(self._tab_zawody_changed_while_editing)
 
+    def _escape_shortcut_triggered(self) -> None:
+        if (
+            self._wynik_edit_table is not None
+            and self.ui.stackedWidget.currentWidget() == self.ui.pageZawody_managment
+        ):
+            self._cancel_incomplete_wynik_row()
+            return
+        self.exit_to_title_triggered()
+
+    def _tab_zawody_changed_while_editing(self, index: int) -> None:
+        if self._wynik_edit_table is None:
+            return
+        if self.ui.tabWidget_zawody.widget(index) is self._wynik_edit_table:
+            return
+        self.ui.tabWidget_zawody.blockSignals(True)
+        self.ui.tabWidget_zawody.setCurrentIndex(self._wynik_edit_tab_index)
+        self.ui.tabWidget_zawody.blockSignals(False)
+
+    def _wynik_row_item_changed(self, table_widget: QTableWidget, row: int, item: QTableWidgetItem) -> None:
+        self.on_table_item_changed(table_widget, item, row)
+
+    def _detach_esc_filter_from_targets(self) -> None:
+        for w in self._esc_filter_targets:
+            try:
+                w.removeEventFilter(self._wynik_esc_filter)
+            except (RuntimeError, TypeError):
+                pass
+        self._esc_filter_targets = []
+
+    def _attach_esc_filter_to_focus(self) -> None:
+        if self._wynik_edit_table is None:
+            return
+        self._detach_esc_filter_from_targets()
+        tw = self._wynik_edit_table
+        targets: list[QWidget] = [tw]
+        fw = QApplication.focusWidget()
+        if fw is not None and fw is not tw:
+            targets.append(fw)
+        for t in targets:
+            t.installEventFilter(self._wynik_esc_filter)
+        self._esc_filter_targets = targets
+
+    def _wynik_edit_lock_ui(self) -> None:
+        self.ui.button_dodaj_wynik.setEnabled(False)
+        self.ui.newZawodnik_pushButton.setEnabled(False)
+        self.ui.sort_seria_button.setEnabled(False)
+        self.ui.sort_miejsce_button.setEnabled(False)
+        self.ui.tabWidget_zawody.tabBar().setEnabled(False)
+        for name in (
+            "actionNowe_zawody",
+            "actionZarzadzanie_zawodami",
+            "actionLista_zawodnikow",
+            "actionRozpocznij_wyswietlanie",
+            "actionZakoncz_wyswietlanie",
+        ):
+            act = getattr(self.ui, name, None)
+            if act is not None:
+                act.setEnabled(False)
+        self.ui.exit_To_title_shortcut.setEnabled(False)
+
+    def _wynik_edit_unlock_ui(self) -> None:
+        self.ui.button_dodaj_wynik.setEnabled(True)
+        self.ui.newZawodnik_pushButton.setEnabled(True)
+        self.ui.sort_seria_button.setEnabled(True)
+        self.ui.sort_miejsce_button.setEnabled(True)
+        self.ui.tabWidget_zawody.tabBar().setEnabled(True)
+        for name in (
+            "actionNowe_zawody",
+            "actionZarzadzanie_zawodami",
+            "actionLista_zawodnikow",
+            "actionRozpocznij_wyswietlanie",
+            "actionZakoncz_wyswietlanie",
+        ):
+            act = getattr(self.ui, name, None)
+            if act is not None:
+                act.setEnabled(True)
+        self.ui.exit_To_title_shortcut.setEnabled(True)
+
+    def _wynik_edit_begin(self, table_widget: QTableWidget, row: int, handler) -> None:
+        self._wynik_edit_table = table_widget
+        self._wynik_edit_row = row
+        self._wynik_item_changed_handler = handler
+        self._wynik_edit_tab_index = self.ui.tabWidget_zawody.currentIndex()
+        self._wynik_edit_lock_ui()
+        QTimer.singleShot(0, self._attach_esc_filter_to_focus)
+
+    def _wynik_edit_end(self) -> None:
+        self._detach_esc_filter_from_targets()
+        self._wynik_edit_table = None
+        self._wynik_edit_row = None
+        self._wynik_item_changed_handler = None
+        self._wynik_edit_unlock_ui()
+
+    def _disconnect_wynik_item_changed(self, table_widget: QTableWidget) -> None:
+        h = self._wynik_item_changed_handler
+        if h is not None:
+            try:
+                table_widget.itemChanged.disconnect(h)
+            except (TypeError, RuntimeError):
+                table_widget.itemChanged.disconnect()
+        self._wynik_item_changed_handler = None
+
+    def _cancel_incomplete_wynik_row(self) -> None:
+        if self._wynik_edit_table is None or self._wynik_edit_row is None:
+            return
+        self._detach_esc_filter_from_targets()
+        tw = self._wynik_edit_table
+        row = self._wynik_edit_row
+        self._disconnect_wynik_item_changed(tw)
+        tw.removeRow(row)
+        self._wynik_edit_end()
+        if hasattr(self, "nr_serii"):
+            delattr(self, "nr_serii")
+        self.ui.button_dodaj_wynik.setFocus()
+
+    def _abandon_wynik_edit_state(self) -> None:
+        """Rozłącza sygnały edycji wiersza bez usuwania wiersza (np. przed clear() zakładek)."""
+        if self._wynik_edit_table is None:
+            return
+        self._detach_esc_filter_from_targets()
+        tw = self._wynik_edit_table
+        self._disconnect_wynik_item_changed(tw)
+        self._wynik_edit_end()
+        if hasattr(self, "nr_serii"):
+            delattr(self, "nr_serii")
 
     def zarejestruj_serie_triggered(self) -> None:
+        if self._wynik_edit_table is not None:
+            return
         from operator_ui_handler import ZarejestrujSerieDialog
         zawody = self.ui.pageZawody_managment.zawody_data
         konkurencja = konkurencja_data_manager.get_konkurencja_by_name(self.ui.tabWidget_zawody.tabText(self.ui.tabWidget_zawody.currentIndex()))
@@ -83,6 +240,7 @@ class SignalsOperatorWindow:
         self.nowe_zawody_dialog.show_dialog()
 
     def on_zawody_created(self, zawody_obj) -> None:
+        self._abandon_wynik_edit_state()
         self.ui.pageZawody_managment.zawody_data = zawody_obj
         self.ui.stackedWidget.setCurrentWidget(self.ui.pageZawody_managment)
         self.ui.tabWidget_zawody.clear()
@@ -107,6 +265,7 @@ class SignalsOperatorWindow:
             self.lista_zawodow_menu.zawody_selected.connect(self.on_zawody_selected)
 
     def on_zawody_selected(self, zawody_obj) -> None:
+        self._abandon_wynik_edit_state()
         self.ui.pageZawody_managment.zawody_data = zawody_obj
         self.ui.stackedWidget.setCurrentWidget(self.ui.pageZawody_managment)
         self.ui.tabWidget_zawody.clear()
@@ -114,14 +273,19 @@ class SignalsOperatorWindow:
 
 
     def sort_seria_button_clicked(self) -> None:
+        if self._wynik_edit_table is not None:
+            return
         self.sort_order = False
         self.sort_wyniki(self.ui.tabWidget_zawody.currentWidget(), self.sort_order)
 
     def sort_miejsce_button_clicked(self) -> None:
+        if self._wynik_edit_table is not None:
+            return
         self.sort_order = True
         self.sort_wyniki(self.ui.tabWidget_zawody.currentWidget(), self.sort_order)
 
     def zawody_management_page_entered(self) -> None:
+        self._abandon_wynik_edit_state()
         zawody = getattr(self.ui.pageZawody_managment, "zawody_data", None)
         if not zawody:
             return
@@ -156,7 +320,11 @@ class SignalsOperatorWindow:
             self.sort_order = False
             self.sort_wyniki(table_widget, self.sort_order)
     def dodaj_wynik_clicked(self) -> None:
+        if self._wynik_edit_table is not None:
+            return
         table_widget = self.ui.tabWidget_zawody.currentWidget()
+        if not isinstance(table_widget, QTableWidget):
+            return
         row_count = table_widget.rowCount()
         table_widget.insertRow(row_count)
         table_widget.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -167,9 +335,9 @@ class SignalsOperatorWindow:
             table_widget.setItem(row_count, col, QTableWidgetItem(""))
         table_widget.setCurrentCell(row_count, 0)
         table_widget.editItem(table_widget.item(row_count, 0))
-        table_widget.itemChanged.connect(
-            lambda item: self.on_table_item_changed(table_widget, item, row_count)
-        )
+        handler = partial(self._wynik_row_item_changed, table_widget, row_count)
+        table_widget.itemChanged.connect(handler)
+        self._wynik_edit_begin(table_widget, row_count, handler)
 
     def on_table_item_changed(self, table_widget, item, row: int) -> None:
         value = item.text()
@@ -196,6 +364,7 @@ class SignalsOperatorWindow:
             table_widget.setCurrentCell(row, table_widget.column(item))
             table_widget.editItem(item)
             table_widget.blockSignals(False)
+            QTimer.singleShot(0, self._attach_esc_filter_to_focus)
             return
         if table_widget.column(item) == 0 and value != "":
             self.nr_serii = int(value)
@@ -224,11 +393,14 @@ class SignalsOperatorWindow:
                 score += int(sorted_value)
                 wynik_id = wynik_data_manager.insert_wynik(seria.id, col, sorted_value)
             table_widget.setItem(row, table_widget.columnCount() - 1, QTableWidgetItem(str(score)))
+            self._disconnect_wynik_item_changed(table_widget)
             table_widget.blockSignals(False)
-            table_widget.itemChanged.disconnect()
             table_widget.clearSelection()
             table_widget.clearFocus()
+            self._wynik_edit_end()
             self.sort_wyniki(table_widget, self.sort_order)
+            if hasattr(self, "nr_serii"):
+                delattr(self, "nr_serii")
             return
 
         if is_shot_column:
@@ -237,6 +409,7 @@ class SignalsOperatorWindow:
         table_widget.setCurrentCell(row, next_col)
         table_widget.editItem(table_widget.item(row, next_col))
         table_widget.blockSignals(False)
+        QTimer.singleShot(0, self._attach_esc_filter_to_focus)
 
 
     def sort_wyniki(self, table_widget: QTableWidget, sort_order: bool) -> None:
@@ -252,7 +425,6 @@ class SignalsOperatorWindow:
         if rows < 2 or cols < 2:
             return
 
-        total_col = cols - 1
         grid: list[list[str]] = []
         for r in range(rows):
             row_texts: list[str] = []
@@ -261,39 +433,7 @@ class SignalsOperatorWindow:
                 row_texts.append(cell.text() if cell is not None else "")
             grid.append(row_texts)
 
-        def nr_serii_key(texts: list[str]) -> int:
-            s = texts[0].strip()
-            if not s:
-                return 0
-            try:
-                return int(s)
-            except ValueError:
-                return 0
-
-        def suma_key(texts: list[str]) -> int:
-            s = texts[total_col].strip()
-            if not s:
-                return 0
-            try:
-                return int(s)
-            except ValueError:
-                return 0
-
-        def strzaly_w_kolejnosci_do_remisu(texts: list[str]) -> tuple[int, ...]:
-            """Strzały kolumnami 1… (bez „Razem”) — kolejność już malejąca w UI / przed DB."""
-            out: list[int] = []
-            for c in range(1, total_col):
-                s = texts[c].strip()
-                out.append(int(s) if s.isdigit() else -1)
-            return tuple(out)
-
-        def ranking_po_sumie_i_przestrzelinach(texts: list[str]) -> tuple:
-            return (suma_key(texts),) + strzaly_w_kolejnosci_do_remisu(texts)
-
-        if sort_order:
-            grid.sort(key=ranking_po_sumie_i_przestrzelinach, reverse=True)
-        else:
-            grid.sort(key=nr_serii_key)
+        grid = sort_wyniki_grid(grid, by_ranking=sort_order)
 
         was_sorting = table_widget.isSortingEnabled()
         table_widget.setSortingEnabled(False)

@@ -7,6 +7,8 @@ Klasy:
  - `KonkurencjaDataManager`, `ZawodyDataManager`, `ZawodnikDataManager`, `SeriaDataManager`, `WynikDataManager` — operacje DB
 """
 
+from __future__ import annotations
+
 import datetime
 
 from globals import Globals
