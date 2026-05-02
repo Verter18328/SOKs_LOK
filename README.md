@@ -37,30 +37,75 @@ SOKs_LOK/
 ├─ Code/                # logika aplikacji (UI handlers, sygnały, data manager)
 ├─ Ui_Files/            # pliki widoków Qt (.ui)
 ├─ Resources/           # zasoby statyczne (np. logo)
-├─ Database_Files/      # lokalna baza danych SQLite
-├─ requirements-dev.txt # zależności projektu
+├─ Database_Files/      # lokalna baza danych SQLite (katalog tworzony przy pierwszym starcie)
+├─ requirements.txt   # punkt wejścia dla pip (deleguje do requirements-dev.txt)
+├─ requirements-dev.txt # PySide6 i zależności uruchomieniowe
 └─ README.md
 ```
 
-## Szybki start
+## Szybki start (po sklonowaniu z GitHuba)
 
-### 1. Instalacja zależności
+Wymagania: **Python 3.11 lub nowszy** (64-bit zalecany na Windows), dostęp do internetu przy pierwszej instalacji pakietów.
+
+### 1. Repozytorium i środowisko wirtualne (zalecane)
+
+Z katalogu, w którym trzymasz projekty:
 
 ```bash
-pip install -r requirements-dev.txt
+git clone <adres HTTPS repozytorium z GitHuba>
+cd SOKs_LOK
+python -m venv .venv
 ```
 
-### 2. Uruchomienie aplikacji
+**Windows (PowerShell)** — aktywacja venv:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+**Linux / macOS:**
+
+```bash
+source .venv/bin/activate
+```
+
+### 2. Instalacja zależności
+
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+(`requirements.txt` odwołuje się do `requirements-dev.txt`; instalowany jest m.in. **PySide6**.)
+
+### 3. Uruchomienie aplikacji
+
+Uruchamiaj z **korzenia repozytorium** (katalog `SOKs_LOK`, tam gdzie leży `README.md`):
 
 ```bash
 python Code/operator_ui_handler.py
+```
+
+Na Windows, jeśli polecenie `python` nie działa, spróbuj:
+
+```powershell
+py -3.11 Code/operator_ui_handler.py
 ```
 
 Po uruchomieniu aplikacja:
 
 - ładuje interfejs z plików `.ui`,
 - inicjalizuje połączenie z bazą danych,
-- tworzy wymagane tabele, jeśli jeszcze nie istnieją.
+- tworzy katalog `Database_Files` i plik bazy, jeśli jeszcze nie istnieją,
+- tworzy wymagane tabele w SQLite przy pierwszym połączeniu.
+
+### Typowe problemy
+
+| Objaw | Co zrobić |
+|--------|-----------|
+| `ModuleNotFoundError: No module named 'PySide6'` | Upewnij się, że aktywowałeś `.venv` i wykonałeś `pip install -r requirements.txt` w tym samym środowisku. |
+| `No module named 'data_manager'` / `Resources` | Uruchom skrypt z katalogu głównego projektu (`python Code/operator_ui_handler.py`), nie kopiuj plików `.py` poza strukturę repo. |
+| PowerShell blokuje `Activate.ps1` | Jednorazowo: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` |
 
 ## Baza danych
 
