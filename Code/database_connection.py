@@ -11,6 +11,7 @@ Następne zapytanie ponownie nawiąże połączenie.
 
 import sqlite3
 import threading
+from collections import defaultdict
 
 
 class DatabaseConnection:
@@ -139,7 +140,7 @@ class DatabaseConnection:
                 konkurencja_id INTEGER NOT NULL,
                 zawodnik_id INTEGER NOT NULL,
                 nr_serii INTEGER NOT NULL CHECK (nr_serii > 0),
-                UNIQUE(zawody_id, konkurencja_id, zawodnik_id, nr_serii),
+                UNIQUE(zawody_id, konkurencja_id, nr_serii),
                 FOREIGN KEY (zawody_id) REFERENCES zawody_lista(id) ON UPDATE NO ACTION ON DELETE CASCADE,
                 FOREIGN KEY (konkurencja_id) REFERENCES konkurencje_lista(id) ON UPDATE NO ACTION ON DELETE RESTRICT,
                 FOREIGN KEY (zawodnik_id) REFERENCES zawodnicy(id) ON UPDATE NO ACTION ON DELETE RESTRICT
@@ -168,6 +169,70 @@ class DatabaseConnection:
             CREATE INDEX IF NOT EXISTS idx_starty_zawody_konkurencja ON starty(zawody_id, konkurencja_id)
             """
         )
+
+        DatabaseConnection._migrate_starty_unique_nr_per_konkurencja(cursor)
+
+    @staticmethod
+    def _migrate_starty_unique_nr_per_konkurencja(cursor: sqlite3.Cursor) -> None:
+        """Stare bazy: UNIQUE był po (zawody, konkurencja, zawodnik, nr) — teraz nr serii jest globalny w obrębie konkurencji na zawodach.
+
+        Przenumerowuje ``nr_serii`` na 1..N wg ``id`` w każdej grupie (zawody_id, konkurencja_id), bez zmiany ``id`` (FK z ``strzaly``).
+        """
+        cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='starty'")
+        row = cursor.fetchone()
+        if not row or not row[0]:
+            return
+        compact = "".join(row[0].split())
+        old_u = "UNIQUE(zawody_id,konkurencja_id,zawodnik_id,nr_serii)"
+        new_u = "UNIQUE(zawody_id,konkurencja_id,nr_serii)"
+        if new_u in compact and old_u not in compact:
+            return
+        if old_u not in compact:
+            return
+
+        cursor.execute(
+            "SELECT id, zawody_id, konkurencja_id, zawodnik_id, nr_serii FROM starty ORDER BY zawody_id, konkurencja_id, id"
+        )
+        fetched = cursor.fetchall()
+        by_zk: dict[tuple[int, int], list[tuple[int, int, int, int, int]]] = defaultdict(list)
+        for rid, zid, kid, zawid, nr in fetched:
+            by_zk[(zid, kid)].append((rid, zid, kid, zawid, nr))
+
+        rebuilt: list[tuple[int, int, int, int, int]] = []
+        for _key, group in by_zk.items():
+            group_sorted = sorted(group, key=lambda t: t[0])
+            for new_nr, (rid, zid, kid, zawid, _old_nr) in enumerate(group_sorted, start=1):
+                rebuilt.append((rid, zid, kid, zawid, new_nr))
+
+        cursor.execute("PRAGMA foreign_keys = OFF")
+        cursor.execute(
+            """
+            CREATE TABLE starty_new (
+                id INTEGER PRIMARY KEY,
+                zawody_id INTEGER NOT NULL,
+                konkurencja_id INTEGER NOT NULL,
+                zawodnik_id INTEGER NOT NULL,
+                nr_serii INTEGER NOT NULL CHECK (nr_serii > 0),
+                UNIQUE(zawody_id, konkurencja_id, nr_serii),
+                FOREIGN KEY (zawody_id) REFERENCES zawody_lista(id) ON UPDATE NO ACTION ON DELETE CASCADE,
+                FOREIGN KEY (konkurencja_id) REFERENCES konkurencje_lista(id) ON UPDATE NO ACTION ON DELETE RESTRICT,
+                FOREIGN KEY (zawodnik_id) REFERENCES zawodnicy(id) ON UPDATE NO ACTION ON DELETE RESTRICT
+            )
+            """
+        )
+        cursor.executemany(
+            "INSERT INTO starty_new (id, zawody_id, konkurencja_id, zawodnik_id, nr_serii) VALUES (?,?,?,?,?)",
+            rebuilt,
+        )
+        cursor.execute("DROP TABLE starty")
+        cursor.execute("ALTER TABLE starty_new RENAME TO starty")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_starty_zawodnik_id ON starty(zawodnik_id)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_starty_zawody_konkurencja ON starty(zawody_id, konkurencja_id)"
+        )
+        cursor.execute("PRAGMA foreign_keys = ON")
 
     # ─── Wykonywanie zapytań ───────────────────────────────────────────
 

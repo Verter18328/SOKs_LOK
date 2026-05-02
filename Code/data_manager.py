@@ -317,7 +317,7 @@ class Zawodnik:
 
     def label(self) -> str:
         """Etykieta do list i pola wyszukiwania: „Imię Nazwisko”."""
-        return f"{self.imie} {self.nazwisko}".strip()
+        return f"{self.imie} {self.nazwisko} ({self.rocznik})".strip()
 
     @staticmethod
     def _from_row(row_id: int, imie: str, nazwisko: str, rocznik: str) -> "Zawodnik":
@@ -336,13 +336,14 @@ class ZawodnikDataManager:
         self.database = db if db is not None else Globals().database
 
     def get_zawodnicy(self, filter_text: str | None = None) -> list[Zawodnik] | None:
-        """Pobiera listę zawodników, opcjonalnie filtrowaną po imieniu/nazwisku."""
-        if filter_text:
+        """Pobiera listę zawodników, opcjonalnie filtrowaną po imieniu/nazwisku (bez rozróżniania wielkości liter)."""
+        ft = filter_text.strip() if filter_text else ""
+        if ft:
             query = """SELECT * FROM zawodnicy
-                       WHERE imie || ' ' || nazwisko LIKE ?
+                       WHERE lower(imie || ' ' || nazwisko) LIKE lower(?)
                        ORDER BY nazwisko, imie
                        LIMIT 30"""
-            params = (f"%{filter_text}%",)
+            params = (f"%{ft}%",)
         else:
             query = "SELECT * FROM zawodnicy ORDER BY nazwisko, imie"
             params = ()
@@ -352,9 +353,14 @@ class ZawodnikDataManager:
         return [Zawodnik._from_row(row[0], row[1], row[2], row[3]) for row in results]
 
     def get_id_from_name_and_birth_year(self, imie: str, nazwisko: str, rocznik: str) -> int | None:
-        """Zwraca ID zawodnika na podstawie imienia, nazwiska i roku urodzenia."""
-        query = "SELECT id FROM zawodnicy WHERE imie = ? AND nazwisko = ? AND rocznik = ?"
-        results = self.database.query(query, (imie, nazwisko, rocznik))
+        """Zwraca ID zawodnika po imieniu, nazwisku i roku (dopasowanie bez względu na wielkość liter)."""
+        imie_n = Globals.imie_or_nazwisko_parser(imie)
+        nazwisko_n = Globals.imie_or_nazwisko_parser(nazwisko)
+        query = (
+            "SELECT id FROM zawodnicy WHERE lower(imie) = lower(?) "
+            "AND lower(nazwisko) = lower(?) AND rocznik = ?"
+        )
+        results = self.database.query(query, (imie_n, nazwisko_n, rocznik))
         if not results:
             return None
         return int(results[0][0])
@@ -369,9 +375,11 @@ class ZawodnikDataManager:
         return Zawodnik._from_row(row[0], row[1], row[2], row[3])
 
     def insert_zawodnik(self, imie: str, nazwisko: str, rocznik: str) -> Zawodnik | None:
-        """Wstawia nowego zawodnika do bazy i zwraca utworzony obiekt."""
+        """Wstawia nowego zawodnika; imię i nazwisko zapisuje w postaci znormalizowanej (`imie_or_nazwisko_parser`)."""
+        imie_n = Globals.imie_or_nazwisko_parser(imie)
+        nazwisko_n = Globals.imie_or_nazwisko_parser(nazwisko)
         query = "INSERT INTO zawodnicy (imie, nazwisko, rocznik) VALUES (?, ?, ?)"
-        latest_id = self.database.query(query, (imie, nazwisko, rocznik))
+        latest_id = self.database.query(query, (imie_n, nazwisko_n, rocznik))
         if not latest_id:
             return None
         return self.get_zawodnik_by_id(latest_id)

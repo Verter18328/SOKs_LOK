@@ -24,8 +24,8 @@ MAX_SHOTS: int = 99
 class ZarejestrujSerieDataValidation:
     """Waliduje dane z formularza zarejestrowania serii."""
     def __init__(self, imie: str, nazwisko: str, rocznik: str) -> None:
-        self.imie = imie
-        self.nazwisko = nazwisko
+        self.imie = Globals.imie_or_nazwisko_parser(imie)
+        self.nazwisko = Globals.imie_or_nazwisko_parser(nazwisko)
         self.rocznik = rocznik
         self.is_valid_result: tuple[bool, str] = self.is_valid()
     

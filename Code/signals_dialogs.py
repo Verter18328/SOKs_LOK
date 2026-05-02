@@ -4,8 +4,8 @@ from globals import Globals
 
 Globals.set_main_directory()
 
-from PySide6.QtCore import QObject, Qt, Signal
-from PySide6.QtWidgets import QListWidgetItem, QMessageBox
+from PySide6.QtCore import QObject, Qt, QStringListModel, QTimer, Signal
+from PySide6.QtWidgets import QCompleter, QListWidgetItem, QMessageBox
 
 from data_manager import (
     konkurencja_data_manager,
@@ -35,6 +35,7 @@ class SignalsZarejestrujSerieDialog(QObject):
     def connect_signals(self) -> None:
         self.ui.buttonBox.accepted.connect(self.accepted)
         self.ui.buttonBox.rejected.connect(self.ui.close)
+        self._setup_zawodnik_completers()
 
     def accepted(self) -> None:
         imie = self.ui.imie_lineEdit.text()
@@ -45,9 +46,13 @@ class SignalsZarejestrujSerieDialog(QObject):
         if not is_valid:
             QMessageBox.warning(self.ui, "Błąd", message)
             return
-        zawodnik = zawodnik_data_manager.get_zawodnik_by_id(zawodnik_data_manager.get_id_from_name_and_birth_year(imie, nazwisko, rocznik))
+        zawodnik = zawodnik_data_manager.get_zawodnik_by_id(
+            zawodnik_data_manager.get_id_from_name_and_birth_year(
+                validator.imie, validator.nazwisko, rocznik
+            )
+        )
         if not zawodnik:
-            zawodnik = zawodnik_data_manager.insert_zawodnik(imie, nazwisko, rocznik)
+            zawodnik = zawodnik_data_manager.insert_zawodnik(validator.imie, validator.nazwisko, rocznik)
             if not zawodnik:
                 QMessageBox.warning(self.ui, "Błąd", "Błąd podczas zapisu zawodnika")
                 return
@@ -57,6 +62,35 @@ class SignalsZarejestrujSerieDialog(QObject):
             QMessageBox.warning(self.ui, "Błąd", "Błąd podczas zapisu serii")
             return
         self.ui.close()
+
+    def _setup_zawodnik_completers(self) -> None:
+        """Podpowiedzi imię/nazwisko — wspólny model, osobny QCompleter na pole (Qt: jeden completer = jeden widget).
+
+        Po wyborze z popupu wypełniane są wszystkie trzy pola; opóźnienie 0 ms — po domyślnym wstawieniu tekstu przez Qt.
+        """
+        zawodnicy = zawodnik_data_manager.get_zawodnicy()
+        if not zawodnicy:
+            return
+        zawodnicy = sorted(zawodnicy, key=lambda z: (z.nazwisko.lower(), z.imie.lower()))
+        self._zawodnicy_completer_rows = zawodnicy
+        model = QStringListModel([z.label() for z in zawodnicy], self.ui)
+        for line_edit in (self.ui.imie_lineEdit, self.ui.nazwisko_lineEdit):
+            completer = QCompleter(model, self.ui)
+            completer.setCaseSensitivity(Qt.CaseInsensitive)
+            completer.setFilterMode(Qt.MatchContains)
+            line_edit.setCompleter(completer)
+            completer.activated[str].connect(self._on_zawodnik_completer_activated)
+
+    def _on_zawodnik_completer_activated(self, completion: str) -> None:
+        def apply_choice() -> None:
+            for z in self._zawodnicy_completer_rows:
+                if z.label() == completion:
+                    self.ui.imie_lineEdit.setText(z.imie)
+                    self.ui.nazwisko_lineEdit.setText(z.nazwisko)
+                    self.ui.rocznik_lineEdit.setText(str(z.rocznik) if z.rocznik else "")
+                    return
+
+        QTimer.singleShot(0, apply_choice)
 
 
 class SignalsKreatorKonkurencjiDialog(QObject):
@@ -117,6 +151,8 @@ class SignalsNewCompetitionDialog(QObject):
     
     def _refresh_konkurencje_combobox(self) -> None:
         self.ui.comboBox_konkurencje.clear()
+        self.ui.comboBox_konkurencje.setPlaceholderText("Wybierz konkurencję")
+        self.ui.comboBox_konkurencje.setCurrentIndex(-1)
         for konkurencja in self.konkurencje.values():
             self.ui.comboBox_konkurencje.addItem(konkurencja.label(), userData=konkurencja)
 

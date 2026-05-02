@@ -131,3 +131,19 @@ class Globals:
         return Globals._parse_with_formats(
             time, (Globals.TIME_FORMAT_PY, Globals.TIME_FORMAT_QT)
         )
+
+    @staticmethod
+    def imie_or_nazwisko_parser(imie_or_nazwisko: str) -> str:
+        """Zwraca imię lub nazwisko w postaci kanonicznej (trim, pierwsza litera wielka).
+
+        Ujednolica zapis i porównania niezależnie od wielkości liter w polu tekstowym.
+        Przy wielu segmentach oddzielonych ``-`` każdy segment jest formatowany osobno.
+        """
+        raw = imie_or_nazwisko.strip()
+        if not raw:
+            return ""
+        parts = [p for p in raw.split("-") if p.strip()]
+        if len(parts) >= 2:
+            return "-".join(p.strip().lower().capitalize() for p in parts)
+        return raw.lower().capitalize()
+

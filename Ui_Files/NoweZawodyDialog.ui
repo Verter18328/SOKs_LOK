@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>580</width>
-    <height>616</height>
+    <height>546</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -22,13 +22,6 @@
   <layout class="QGridLayout" name="gridLayout">
    <item row="6" column="0" colspan="11">
     <widget class="QListWidget" name="konkurencje_list"/>
-   </item>
-   <item row="10" column="0">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::NoButton</set>
-     </property>
-    </widget>
    </item>
    <item row="4" column="0" colspan="11">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -69,13 +62,6 @@
      </item>
     </layout>
    </item>
-   <item row="10" column="10">
-    <widget class="QDialogButtonBox" name="buttonBox_zawody">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::NoButton</set>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="0" colspan="11">
     <widget class="QLabel" name="label_2">
      <property name="sizePolicy">
@@ -86,6 +72,13 @@
      </property>
      <property name="text">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:18pt; font-weight:700;&quot;&gt;Stwórz nowe zawody&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="10">
+    <widget class="QDialogButtonBox" name="buttonBox_zawody">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Save</set>
      </property>
     </widget>
    </item>
@@ -152,38 +145,5 @@
   </layout>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>Dialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>rejected()</signal>
-   <receiver>Dialog</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>
