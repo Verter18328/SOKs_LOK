@@ -339,6 +339,17 @@ class SignalsOperatorWindow:
         table_widget.itemChanged.connect(handler)
         self._wynik_edit_begin(table_widget, row_count, handler)
 
+    def _reject_wynik_cell_after_warning(
+        self, table_widget: QTableWidget, item: QTableWidgetItem, row: int
+    ) -> None:
+        """Po QMessageBox: czyści komórkę, ustawia fokus z powrotem na nią i odnawia filtr Esc na edytorze."""
+        table_widget.blockSignals(True)
+        item.setText("")
+        table_widget.setCurrentCell(row, table_widget.column(item))
+        table_widget.editItem(item)
+        table_widget.blockSignals(False)
+        QTimer.singleShot(0, self._attach_esc_filter_to_focus)
+
     def on_table_item_changed(self, table_widget, item, row: int) -> None:
         value = item.text()
         is_shot_column = table_widget.column(item) != 0
@@ -346,6 +357,7 @@ class SignalsOperatorWindow:
         zawody = getattr(self.ui.pageZawody_managment, "zawody_data", None)
         if not zawody or not getattr(zawody, "id", None):
             QMessageBox.warning(table_widget, "Błąd", "Zawody nie znalezione")
+            self._reject_wynik_cell_after_warning(table_widget, item, row)
             return
         zawody_id = zawody.id
         konkurencja = konkurencja_data_manager.get_konkurencja_by_name(
@@ -353,18 +365,14 @@ class SignalsOperatorWindow:
         )
         if not konkurencja:
             QMessageBox.warning(table_widget, "Błąd", "Konkurencja nie znaleziona")
+            self._reject_wynik_cell_after_warning(table_widget, item, row)
             return
 
         validator = WynikiTabValidation(value, is_shot_column, zawody_id, konkurencja.id)
         is_valid, message = validator.is_valid_result
         if not is_valid:
             QMessageBox.warning(table_widget, "Błąd", message)
-            table_widget.blockSignals(True)
-            item.setText("")
-            table_widget.setCurrentCell(row, table_widget.column(item))
-            table_widget.editItem(item)
-            table_widget.blockSignals(False)
-            QTimer.singleShot(0, self._attach_esc_filter_to_focus)
+            self._reject_wynik_cell_after_warning(table_widget, item, row)
             return
         if table_widget.column(item) == 0 and value != "":
             self.nr_serii = int(value)
@@ -373,6 +381,9 @@ class SignalsOperatorWindow:
             seria = seria_data_manager.get_seria_by_number_and_konkurencja_and_zawody(self.nr_serii, zawody_id, konkurencja.id)
         if not seria and hasattr(self, "nr_serii") and self.nr_serii is not None:
             QMessageBox.warning(table_widget, "Błąd", "Seria nie znaleziona")
+            if table_widget.column(item) == 0 and hasattr(self, "nr_serii"):
+                delattr(self, "nr_serii")
+            self._reject_wynik_cell_after_warning(table_widget, item, row)
             return
 
         if table_widget.row(item) != row:

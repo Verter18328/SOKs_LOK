@@ -10,7 +10,7 @@ Każda klasa udostępnia atrybut `is_valid_result` — krotkę `(bool, str)`.
 
 import datetime
 
-from data_manager import seria_data_manager
+from data_manager import seria_data_manager, wynik_data_manager
 from globals import Globals
 
 Globals.set_main_directory()
@@ -138,6 +138,11 @@ class WynikiTabValidation:
                 return False, "Numer serii nie może być ujemny."
             if not self.does_seria_number_exist_for_konkurencja(int(self.value)):
                 return False, "Numer serii nie istnieje."
+            seria = seria_data_manager.get_seria_by_number_and_konkurencja_and_zawody(
+                int(self.value), self.zawody_id, self.konkurencja_id
+            )
+            if seria and wynik_data_manager.does_wynik_exist_for_seria_id(seria.id):
+                return False, "Wynik dla tej serii już istnieje."
         return True, "Dane są poprawne."
 
     def does_seria_number_exist_for_konkurencja(self, seria_number: int) -> bool:

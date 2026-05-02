@@ -49,6 +49,10 @@ class WynikDataManager:
             return None
         return [Wynik(row[0], row[1], row[2], row[3]) for row in result]
 
+    def does_wynik_exist_for_seria_id(self, seria_id: int) -> bool:
+        query = "SELECT EXISTS(SELECT 1 FROM strzaly WHERE start_id = ?)"
+        result = self.database.query(query, (seria_id,))
+        return bool(result[0][0]) if result else False
 
 
 wynik_data_manager = WynikDataManager()
