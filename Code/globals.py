@@ -14,6 +14,49 @@ from database_connection import DatabaseConnection
 from PySide6.QtUiTools import QUiLoader
 
 
+def _dev_project_root() -> str:
+    """Katalog główny repozytorium (uruchomienie z kodu źródłowego)."""
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
+def _frozen_exe_dir() -> str:
+    """Folder zawierający `SOKs_LOK.exe` (onedir)."""
+    return os.path.dirname(os.path.abspath(sys.executable))
+
+
+def _bundled_assets_root() -> str:
+    """Katalog z `Ui_Files` i `Resources` — w PyInstaller 6 zwykle `_internal`, nie obok `.exe`."""
+    if not getattr(sys, "frozen", False):
+        return _dev_project_root()
+    marker = os.path.join("Ui_Files", "OperatorWindow.ui")
+    candidates: list[str] = []
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        candidates.append(meipass)
+    exe_dir = _frozen_exe_dir()
+    candidates.append(os.path.join(exe_dir, "_internal"))
+    candidates.append(exe_dir)
+    for root in candidates:
+        if os.path.isfile(os.path.join(root, marker)):
+            return root
+    return exe_dir
+
+
+def _writable_app_root() -> str:
+    """Katalog na dane zapisywalne przez użytkownika (baza): repo albo folder z `.exe`."""
+    if getattr(sys, "frozen", False):
+        return _frozen_exe_dir()
+    return _dev_project_root()
+
+
+def _asset_path(*parts: str) -> str:
+    return os.path.abspath(os.path.join(_bundled_assets_root(), *parts))
+
+
+def _user_data_path(*parts: str) -> str:
+    return os.path.abspath(os.path.join(_writable_app_root(), *parts))
+
+
 # TODO:
 # - Dodać wyszukiwanie zawodów po nazwie i dacie w 'Zarządzaj zawodami'
 # - Ustawić maksymalną ilość wyników wyszukiwania zawodników i dodać przycisk 'Pokaż więcej wyników'
@@ -37,40 +80,24 @@ class Globals:
 
     # ─── Ścieżki i zasoby ─────────────────────────────────────────────
 
-    DB_PATH = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'Database_Files', 'Database.db')
-    )
+    DB_PATH = _user_data_path('Database_Files', 'Database.db')
     PROJECT_NAME = 'SOKs_LOK'
     UI_LOADER = QUiLoader()
 
     UI_PATHS_DICT = {
-        'OPERATOR_WINDOW': os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'OperatorWindow.ui')
-        ),
-        'NEW_COMPETITION_DIALOG': os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'NoweZawodyDialog.ui')
-        ),
-        '5_SHOOTS_TABLE': os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'Tabelka5Strzałów.ui')
-        ),
-        '10_SHOOTS_TABLE': os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'Tabelka10Strzałów.ui')
-        ),
-        'ZAPADKI_TABLE': os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'TabelkaZapadki.ui')
-        ),
-        'KREATOR_KONKURENCJI_DIALOG': os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'KreatorKonkurencji.ui')
-        ),
-        'ZAREJESTRUJ_SERIE_DIALOG': os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', 'Ui_Files', 'ZarejestrujSerie.ui')
-        ),
+        'OPERATOR_WINDOW': _asset_path('Ui_Files', 'OperatorWindow.ui'),
+        'NEW_COMPETITION_DIALOG': _asset_path('Ui_Files', 'NoweZawodyDialog.ui'),
+        '5_SHOOTS_TABLE': _asset_path('Ui_Files', 'Tabelka5Strzałów.ui'),
+        '10_SHOOTS_TABLE': _asset_path('Ui_Files', 'Tabelka10Strzałów.ui'),
+        'ZAPADKI_TABLE': _asset_path('Ui_Files', 'TabelkaZapadki.ui'),
+        'KREATOR_KONKURENCJI_DIALOG': _asset_path('Ui_Files', 'KreatorKonkurencji.ui'),
+        'ZAREJESTRUJ_SERIE_DIALOG': _asset_path('Ui_Files', 'ZarejestrujSerie.ui'),
+        'TEMPORARY_DISPLAY': _asset_path('Ui_Files', 'TemporaryDisplay.ui'),
+        'WAITING_DISPLAY': _asset_path('Ui_Files', 'Waiting.ui'),
     }
 
     RESOURCES_PATHS_DICT = {
-        'LOGO_IMAGE': os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', 'Resources', 'logo.jpeg')
-        )
+        'LOGO_IMAGE': _asset_path('Resources', 'logo.jpeg'),
     }
 
     def __init__(self) -> None:
@@ -90,11 +117,21 @@ class Globals:
                 pass
 
     @staticmethod
+    def project_root() -> str:
+        """Katalog zapisywalny (baza): repo albo folder obok `SOKs_LOK.exe`."""
+        return _writable_app_root()
+
+    @staticmethod
     def set_main_directory() -> None:
-        """Dodaje katalog główny projektu do `sys.path` (ułatwia importy relative)."""
-        main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        if main_dir not in sys.path:
-            sys.path.append(main_dir)
+        """Dodaje katalogi do `sys.path` (import `Resources` itd.)."""
+        if getattr(sys, "frozen", False):
+            for d in (_writable_app_root(), _bundled_assets_root()):
+                if d not in sys.path:
+                    sys.path.insert(0, d)
+        else:
+            main_dir = _dev_project_root()
+            if main_dir not in sys.path:
+                sys.path.insert(0, main_dir)
 
     # ─── Parsowanie i formatowanie dat ─────────────────────────────────
 

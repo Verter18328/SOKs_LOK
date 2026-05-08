@@ -299,6 +299,8 @@
     <addaction name="separator"/>
     <addaction name="actionRozpocznij_wyswietlanie"/>
     <addaction name="separator"/>
+    <addaction name="actionZmie_Konkurencje"/>
+    <addaction name="separator"/>
     <addaction name="actionZakoncz_wyswietlanie"/>
     <addaction name="separator"/>
    </widget>
@@ -375,6 +377,11 @@
    </property>
    <property name="menuRole">
     <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionZmie_Konkurencje">
+   <property name="text">
+    <string>Zmień Wyświetlaną Konkurencje</string>
    </property>
   </action>
  </widget>

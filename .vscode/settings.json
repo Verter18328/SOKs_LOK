@@ -1,0 +1,11 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/Code",
+    "${workspaceFolder}"
+  ],
+  "qt-qml.qmlls.additionalImportPaths": [
+    "${workspaceFolder}/.venv/Lib/site-packages/PySide6/qml",
+    "${workspaceFolder}/.venv/lib/site-packages/PySide6/qml"
+  ]
+}

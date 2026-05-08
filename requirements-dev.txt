@@ -1,0 +1,3 @@
+# Zależności tylko pod budowanie / rozwój (nie są wymagane do uruchomienia z kodu źródłowego).
+-r requirements.txt
+pyinstaller>=6.3.0

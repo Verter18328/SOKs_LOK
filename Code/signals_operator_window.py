@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 
 from data_manager import konkurencja_data_manager, zawody_data_manager, zawodnik_data_manager, Seria, seria_data_manager, wynik_data_manager
 from data_validation import WynikiTabValidation
-from ranking_utils import sort_wyniki_grid
+from sort_methods import WynikiSorter
 
 
 class _WynikRowEscapeFilter(QObject):
@@ -54,6 +54,7 @@ class SignalsOperatorWindow:
     def __init__(self, ui) -> None:
         self.ui = ui
         self.sort_order: bool = False
+        self._wyniki_sorter = WynikiSorter()
         self._wynik_edit_table: QTableWidget | None = None
         self._wynik_edit_row: int | None = None
         self._wynik_edit_tab_index: int = 0
@@ -82,6 +83,11 @@ class SignalsOperatorWindow:
         self.ui.sort_seria_button.clicked.connect(self.sort_seria_button_clicked)
         self.ui.sort_miejsce_button.clicked.connect(self.sort_miejsce_button_clicked)
         self.ui.tabWidget_zawody.currentChanged.connect(self._tab_zawody_changed_while_editing)
+        if hasattr(self.ui, "zamknij_zawody_button"):
+            self.ui.zamknij_zawody_button.setEnabled(False)
+            self.ui.zamknij_zawody_button.setToolTip(
+                "Zamykanie zawodów (blokada edycji, druk) — planowane w wersji 1.0."
+            )
 
     def _escape_shortcut_triggered(self) -> None:
         if (
@@ -444,7 +450,7 @@ class SignalsOperatorWindow:
                 row_texts.append(cell.text() if cell is not None else "")
             grid.append(row_texts)
 
-        grid = sort_wyniki_grid(grid, by_ranking=sort_order)
+        grid = self._wyniki_sorter.sort_wyniki_grid(grid, by_ranking=sort_order)
 
         was_sorting = table_widget.isSortingEnabled()
         table_widget.setSortingEnabled(False)

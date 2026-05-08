@@ -38,7 +38,9 @@ SOKs_LOK/
 ├─ Ui_Files/            # pliki widoków Qt (.ui)
 ├─ Resources/           # zasoby statyczne (np. logo)
 ├─ Database_Files/      # lokalna baza danych SQLite (katalog tworzony przy pierwszym starcie)
-├─ requirements.txt   # zależności Python (pip install -r requirements.txt)
+├─ requirements.txt     # zależności uruchomieniowe
+├─ requirements-dev.txt # PyInstaller + build (opcjonalnie)
+├─ SOKs_LOK.spec        # konfiguracja pakietu EXE (Windows)
 └─ README.md
 ```
 
@@ -130,5 +132,32 @@ Schemat obejmuje m.in. tabele:
 
 ## Status projektu
 
-Projekt jest rozwijany i zawiera aktywną listę usprawnień (TODO) w kodzie.
-Najlepiej traktować go jako aplikację roboczą, gotową do dalszej iteracji.
+**Wersja 0.1** — zamknięta po testach terenowych; zakres: pojedyncze zawody, serie,
+wyniki, ranking (bez formalnego „zamknięcia” zawodów w aplikacji — to 1.0).
+
+Kolejny etap: **1.0** (druk, eksport, ekran HDMI/QML, `zamknij_zawody_button` itd.).
+
+## Budowanie pliku EXE (Windows, PyInstaller)
+
+1. Zainstaluj zależności deweloperskie (w tym PyInstaller):
+
+   ```powershell
+   pip install -r requirements-dev.txt
+   ```
+
+2. Z katalogu głównego repozytorium (obok `SOKs_LOK.spec`):
+
+   ```powershell
+   pyinstaller SOKs_LOK.spec
+   ```
+
+3. Wynik: folder `dist/SOKs_LOK/` z plikiem `SOKs_LOK.exe` oraz podkatalogiem
+   `_internal/` (PyInstaller 6 umieszcza tam m.in. `Ui_Files/` i `Resources/`).
+   **Skopiuj cały folder `dist/SOKs_LOK/`** na komputer docelowy (nie tylko sam
+   `.exe`). Baza `Database_Files/Database.db` powstanie przy pierwszym
+   uruchomieniu **obok `SOKs_LOK.exe`** (zapisywalny katalog użytkownika).
+
+Uwagi:
+
+- Buduj na tej samej architekturze co docelowy PC (zwykle **64-bit Windows**).
+- Antywirus może pierwszy raz dłużej skanować świeży plik z PyInstaller.
