@@ -3,3 +3,6 @@ __pycache__/
 .venv/
 Database_Files/Database.db
 .pytest_cache/
+build/
+dist/
+plebsDisplay/
