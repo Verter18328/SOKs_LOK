@@ -23,10 +23,9 @@ MAX_SHOTS: int = 99
 
 class ZarejestrujSerieDataValidation:
     """Waliduje dane z formularza zarejestrowania serii."""
-    def __init__(self, imie: str, nazwisko: str, rocznik: str) -> None:
+    def __init__(self, imie: str, nazwisko: str) -> None:
         self.imie = Globals.imie_or_nazwisko_parser(imie)
         self.nazwisko = Globals.imie_or_nazwisko_parser(nazwisko)
-        self.rocznik = rocznik
         self.is_valid_result: tuple[bool, str] = self.is_valid()
     
     def is_valid(self) -> tuple[bool, str]:
@@ -35,10 +34,6 @@ class ZarejestrujSerieDataValidation:
             return False, "Imię nie może być puste."
         if not self.nazwisko.strip():
             return False, "Nazwisko nie może być puste."
-        if not self.rocznik.isdigit() or int(self.rocznik) <= 0:
-            return False, "Rocznik musi być liczbą całkowitą."
-        if int(self.rocznik) <= 0:
-            return False, "Rocznik nie może być ujemny."
         return True, "Dane są poprawne."
 
 
@@ -136,14 +131,9 @@ class WynikiTabValidation:
                 return False, "Numer serii nie może być równy 0."
             if int(self.value) < 0:
                 return False, "Numer serii nie może być ujemny."
-            if not self.does_seria_number_exist_for_konkurencja(int(self.value)):
+            if not seria_data_manager.does_seria_number_exist_for_zawody(int(self.value), self.zawody_id):
                 return False, "Numer serii nie istnieje."
-            seria = seria_data_manager.get_seria_by_number_and_konkurencja_and_zawody(
-                int(self.value), self.zawody_id, self.konkurencja_id
-            )
+            seria = seria_data_manager.get_seria_by_number_and_zawody(int(self.value), self.zawody_id)
             if seria and wynik_data_manager.does_wynik_exist_for_seria_id(seria.id):
                 return False, "Wynik dla tej serii już istnieje."
         return True, "Dane są poprawne."
-
-    def does_seria_number_exist_for_konkurencja(self, seria_number: int) -> bool:
-        return seria_data_manager.does_seria_number_exist_for_konkurencja(seria_number, self.zawody_id, self.konkurencja_id)

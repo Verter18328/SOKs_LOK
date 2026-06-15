@@ -54,6 +54,15 @@ class WynikDataManager:
         result = self.database.query(query, (seria_id,))
         return bool(result[0][0]) if result else False
 
+    def update_wyniki_for_seria(self, seria_id: int, sorted_punkty: list[int]) -> bool:
+        """Aktualizuje punkty wszystkich strzałów serii (``nr_strzalu`` = indeks kolumny 1…N)."""
+        for nr_strzalu, punkty in enumerate(sorted_punkty, start=1):
+            query = "UPDATE strzaly SET punkty = ? WHERE start_id = ? AND nr_strzalu = ?"
+            result = self.database.query(query, (punkty, seria_id, nr_strzalu))
+            if result is None:
+                return False
+        return True
+
 
 wynik_data_manager = WynikDataManager()
 
@@ -81,9 +90,9 @@ class SeriaDataManager:
     def __init__(self, db=None) -> None:
         self.database = db if db is not None else Globals().database
 
-    def get_last_seria_number_for_konkurencja(self, konkurencja_id: int, zawody_id: int) -> int:
-        query = "SELECT MAX(nr_serii) FROM starty WHERE konkurencja_id = ? AND zawody_id = ?"
-        result = self.database.query(query, (konkurencja_id, zawody_id))
+    def get_last_seria_number_for_zawody(self, zawody_id: int) -> int:
+        query = "SELECT MAX(nr_serii) FROM starty WHERE zawody_id = ?"
+        result = self.database.query(query, (zawody_id,))
         if result is None or result[0][0] is None or result[0][0] == "":
             return 0
         return int(result[0][0])
@@ -100,6 +109,11 @@ class SeriaDataManager:
         result = self.database.query(query, (seria_number, zawody_id, konkurencja_id))
         return bool(result[0][0]) if result else False
 
+    def does_seria_number_exist_for_zawody(self, seria_number: int, zawody_id: int) -> bool:
+        query = "SELECT EXISTS(SELECT 1 FROM starty WHERE nr_serii = ? AND zawody_id = ?)"
+        result = self.database.query(query, (seria_number, zawody_id))
+        return bool(result[0][0]) if result else False
+
     def get_seria_by_id(self, seria_id: int) -> Seria | None:
         query = "SELECT id, nr_serii, zawodnik_id, zawody_id, konkurencja_id FROM starty WHERE id = ?"
         result = self.database.query(query, (seria_id,))
@@ -114,13 +128,48 @@ class SeriaDataManager:
         if not result:
             return None
         return self.get_seria_by_id(result[0][0])
-    
+
+    def get_seria_by_number_and_zawody(self, seria_number: int, zawody_id: int) -> Seria | None:
+        query = "SELECT id FROM starty WHERE nr_serii = ? AND zawody_id = ?"
+        result = self.database.query(query, (seria_number, zawody_id))
+        if not result:
+            return None
+        return self.get_seria_by_id(result[0][0])
+
     def get_all_series_by_zawody_and_konkurencja(self, zawody_id: int, konkurencja_id: int) -> list[Seria] | None:
         query = "SELECT id, nr_serii, zawodnik_id, zawody_id, konkurencja_id FROM starty WHERE zawody_id = ? AND konkurencja_id = ?"
         result = self.database.query(query, (zawody_id, konkurencja_id))
         if not result:
             return None
         return [self._from_row(row[0], row[1], row[2], row[3], row[4]) for row in result]
+
+    def get_all_series_by_zawody(self, zawody_id: int) -> list[Seria] | None:
+        query = "SELECT id, nr_serii, zawodnik_id, zawody_id, konkurencja_id FROM starty WHERE zawody_id = ? ORDER BY nr_serii"
+        result = self.database.query(query, (zawody_id,))
+        if not result:
+            return None
+        return [self._from_row(row[0], row[1], row[2], row[3], row[4]) for row in result]
+
+    def delete_seria(self, seria_id: int) -> bool:
+        """Usuwa serię po ID (powiązane strzały — kaskada FK w bazie)."""
+        result = self.database.query("DELETE FROM starty WHERE id = ?", (seria_id,))
+        if result is None or result == 0:
+            return False
+        return True
+
+    def update_seria(
+        self,
+        seria_id: int,
+        number: int,
+        zawodnik: Zawodnik,
+        konkurencja: Konkurencja,
+    ) -> bool:
+        """Aktualizuje numer serii, zawodnika i konkurencję dla istniejącej serii."""
+        query = "UPDATE starty SET nr_serii = ?, zawodnik_id = ?, konkurencja_id = ? WHERE id = ?"
+        result = self.database.query(query, (number, zawodnik.id, konkurencja.id, seria_id))
+        if result is None or result == 0:
+            return False
+        return True
 
     def _from_row(
         self,
@@ -306,26 +355,24 @@ zawody_data_manager = ZawodyDataManager()
 
 
 class Zawodnik:
-    """Reprezentuje wiersz z tabeli `zawodnicy` (id, imię, nazwisko, rocznik)."""
+    """Reprezentuje wiersz z tabeli `zawodnicy` (id, imię, nazwisko)."""
 
     def __init__(
         self,
         imie: str | None = None,
         nazwisko: str | None = None,
-        rocznik: str | None = None,
     ) -> None:
         self.id: int | None = None
         self.imie = imie if imie is not None else ""
         self.nazwisko = nazwisko if nazwisko is not None else ""
-        self.rocznik = rocznik if rocznik is not None else ""
 
     def label(self) -> str:
         """Etykieta do list i pola wyszukiwania: „Imię Nazwisko”."""
-        return f"{self.imie} {self.nazwisko} ({self.rocznik})".strip()
+        return f"{self.imie} {self.nazwisko}".strip()
 
     @staticmethod
-    def _from_row(row_id: int, imie: str, nazwisko: str, rocznik: str) -> "Zawodnik":
-        z = Zawodnik(imie, nazwisko, rocznik)
+    def _from_row(row_id: int, imie: str, nazwisko: str) -> "Zawodnik":
+        z = Zawodnik(imie, nazwisko)
         z.id = row_id
         return z
 
@@ -354,39 +401,53 @@ class ZawodnikDataManager:
         results = self.database.query(query, params)
         if not results:
             return None
-        return [Zawodnik._from_row(row[0], row[1], row[2], row[3]) for row in results]
+        return [Zawodnik._from_row(row[0], row[1], row[2]) for row in results]
 
-    def get_id_from_name_and_birth_year(self, imie: str, nazwisko: str, rocznik: str) -> int | None:
-        """Zwraca ID zawodnika po imieniu, nazwisku i roku (dopasowanie bez względu na wielkość liter)."""
+    def get_id_from_imie_nazwisko(self, imie: str, nazwisko: str) -> int | None:
+        """Zwraca ID zawodnika po imieniu i nazwisku (dopasowanie bez względu na wielkość liter)."""
         imie_n = Globals.imie_or_nazwisko_parser(imie)
         nazwisko_n = Globals.imie_or_nazwisko_parser(nazwisko)
         query = (
             "SELECT id FROM zawodnicy WHERE lower(imie) = lower(?) "
-            "AND lower(nazwisko) = lower(?) AND rocznik = ?"
+            "AND lower(nazwisko) = lower(?)"
         )
-        results = self.database.query(query, (imie_n, nazwisko_n, rocznik))
+        results = self.database.query(query, (imie_n, nazwisko_n))
         if not results:
             return None
         return int(results[0][0])
 
     def get_zawodnik_by_id(self, zawodnik_id: int) -> Zawodnik | None:
         """Zwraca pełny rekord zawodnika po ID lub None."""
-        query = "SELECT id, imie, nazwisko, rocznik FROM zawodnicy WHERE id = ?"
+        query = "SELECT id, imie, nazwisko FROM zawodnicy WHERE id = ?"
         results = self.database.query(query, (zawodnik_id,))
         if not results:
             return None
         row = results[0]
-        return Zawodnik._from_row(row[0], row[1], row[2], row[3])
+        return Zawodnik._from_row(row[0], row[1], row[2])
 
-    def insert_zawodnik(self, imie: str, nazwisko: str, rocznik: str) -> Zawodnik | None:
+    def insert_zawodnik(self, imie: str, nazwisko: str) -> Zawodnik | None:
         """Wstawia nowego zawodnika; imię i nazwisko zapisuje w postaci znormalizowanej (`imie_or_nazwisko_parser`)."""
         imie_n = Globals.imie_or_nazwisko_parser(imie)
         nazwisko_n = Globals.imie_or_nazwisko_parser(nazwisko)
-        query = "INSERT INTO zawodnicy (imie, nazwisko, rocznik) VALUES (?, ?, ?)"
-        latest_id = self.database.query(query, (imie_n, nazwisko_n, rocznik))
+        query = "INSERT INTO zawodnicy (imie, nazwisko) VALUES (?, ?)"
+        latest_id = self.database.query(query, (imie_n, nazwisko_n))
         if not latest_id:
             return None
         return self.get_zawodnik_by_id(latest_id)
-
-
+    def delete_zawodnik(self, zawodnik_id: int) -> bool:
+        """Usuwa zawodnika po ID (serie i strzały — kaskada FK w bazie)."""
+        result = self.database.query("DELETE FROM zawodnicy WHERE id = ?", (zawodnik_id,))
+        if result is None or result == 0:
+            return False
+        return True
+    def update_zawodnik(self, zawodnik_id: int, imie: str, nazwisko: str) -> bool:
+        """Aktualizuje zawodnika po ID."""
+        imie_n = Globals.imie_or_nazwisko_parser(imie)
+        nazwisko_n = Globals.imie_or_nazwisko_parser(nazwisko)
+        query = "UPDATE zawodnicy SET imie = ?, nazwisko = ? WHERE id = ?"
+        result = self.database.query(query, (imie_n, nazwisko_n, zawodnik_id))
+        if result is None or result == 0:
+            return False
+        return True
+    
 zawodnik_data_manager = ZawodnikDataManager()

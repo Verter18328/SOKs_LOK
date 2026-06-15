@@ -30,7 +30,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="pageTitle">
        <layout class="QGridLayout" name="gridLayout_4">
@@ -78,8 +78,15 @@
       </widget>
       <widget class="QWidget" name="pageZawody_managment">
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="3" column="2">
-         <spacer name="horizontalSpacer_3">
+        <item row="4" column="7">
+         <widget class="QPushButton" name="button_dodaj_wynik">
+          <property name="text">
+           <string>Dodaj Wynik</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="3">
+         <spacer name="horizontalSpacer_4">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -101,41 +108,14 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
+        <item row="4" column="0">
          <widget class="QPushButton" name="zamknij_zawody_button">
           <property name="text">
            <string>Zamknij zawody (in development)</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="3">
-         <spacer name="horizontalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="3" column="7">
-         <widget class="QPushButton" name="button_dodaj_wynik">
-          <property name="text">
-           <string>Dodaj Wynik</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="4">
-         <widget class="QPushButton" name="newZawodnik_pushButton">
-          <property name="text">
-           <string>Zarejestruj Serię</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
+        <item row="4" column="1">
          <spacer name="horizontalSpacer_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -148,7 +128,7 @@
           </property>
          </spacer>
         </item>
-        <item row="2" column="0" colspan="8">
+        <item row="3" column="0" colspan="8">
          <widget class="QTabWidget" name="tabWidget_zawody">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -161,7 +141,14 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="5">
+        <item row="4" column="4">
+         <widget class="QPushButton" name="newZawodnik_pushButton">
+          <property name="text">
+           <string>Zarejestruj Serię</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="5">
          <spacer name="horizontalSpacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -174,8 +161,8 @@
           </property>
          </spacer>
         </item>
-        <item row="3" column="6">
-         <spacer name="horizontalSpacer_6">
+        <item row="4" column="2">
+         <spacer name="horizontalSpacer_3">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -187,7 +174,7 @@
           </property>
          </spacer>
         </item>
-        <item row="1" column="5" colspan="3">
+        <item row="2" column="5" colspan="3">
          <layout class="QHBoxLayout" name="horizontalLayout">
           <property name="sizeConstraint">
            <enum>QLayout::SetFixedSize</enum>
@@ -238,6 +225,40 @@
            </widget>
           </item>
          </layout>
+        </item>
+        <item row="4" column="6">
+         <spacer name="horizontalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="7">
+         <widget class="QPushButton" name="start_button">
+          <property name="text">
+           <string>Lista startów</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="pageLista_starty">
+       <layout class="QGridLayout" name="gridLayout_6">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:16pt; font-weight:696;&quot;&gt;Lista Startów&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QListWidget" name="starty_list"/>
         </item>
        </layout>
       </widget>

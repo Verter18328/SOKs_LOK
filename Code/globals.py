@@ -6,8 +6,8 @@ Zawiera klasę `Globals` przechowującą:
 - metody pomocnicze do parsowania i formatowania dat
 """
 
-import os
 import sys
+import pathlib
 import datetime
 
 from database_connection import DatabaseConnection
@@ -16,30 +16,30 @@ from PySide6.QtUiTools import QUiLoader
 
 def _dev_project_root() -> str:
     """Katalog główny repozytorium (uruchomienie z kodu źródłowego)."""
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    return pathlib.Path(__file__).parent.parent.as_posix()
 
 
 def _frozen_exe_dir() -> str:
     """Folder zawierający `SOKs_LOK.exe` (onedir)."""
-    return os.path.dirname(os.path.abspath(sys.executable))
+    return pathlib.Path(sys.executable).parent.as_posix()
 
 
 def _bundled_assets_root() -> str:
     """Katalog z `Ui_Files` i `Resources` — w PyInstaller 6 zwykle `_internal`, nie obok `.exe`."""
     if not getattr(sys, "frozen", False):
         return _dev_project_root()
-    marker = os.path.join("Ui_Files", "OperatorWindow.ui")
-    candidates: list[str] = []
+    marker = pathlib.Path("Ui_Files", "OperatorWindow.ui")
+    candidates: list[pathlib.Path] = []
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
-        candidates.append(meipass)
+        candidates.append(pathlib.Path(meipass))
     exe_dir = _frozen_exe_dir()
-    candidates.append(os.path.join(exe_dir, "_internal"))
-    candidates.append(exe_dir)
+    candidates.append(pathlib.Path(exe_dir).joinpath("_internal"))
+    candidates.append(pathlib.Path(exe_dir))
     for root in candidates:
-        if os.path.isfile(os.path.join(root, marker)):
-            return root
-    return exe_dir
+        if root.joinpath(marker).is_file():
+            return root.as_posix()
+    return pathlib.Path(exe_dir).as_posix()
 
 
 def _writable_app_root() -> str:
@@ -50,11 +50,11 @@ def _writable_app_root() -> str:
 
 
 def _asset_path(*parts: str) -> str:
-    return os.path.abspath(os.path.join(_bundled_assets_root(), *parts))
+    return pathlib.Path(_bundled_assets_root(), *parts).as_posix()
 
 
 def _user_data_path(*parts: str) -> str:
-    return os.path.abspath(os.path.join(_writable_app_root(), *parts))
+    return pathlib.Path(_writable_app_root(), *parts).as_posix()
 
 
 # TODO:
@@ -92,8 +92,10 @@ class Globals:
         'ZAPADKI_TABLE': _asset_path('Ui_Files', 'TabelkaZapadki.ui'),
         'KREATOR_KONKURENCJI_DIALOG': _asset_path('Ui_Files', 'KreatorKonkurencji.ui'),
         'ZAREJESTRUJ_SERIE_DIALOG': _asset_path('Ui_Files', 'ZarejestrujSerie.ui'),
+        'EDIT_SERIA_DIALOG': _asset_path('Ui_Files', 'EdytujSerie.ui'),
         'TEMPORARY_DISPLAY': _asset_path('Ui_Files', 'TemporaryDisplay.ui'),
         'WAITING_DISPLAY': _asset_path('Ui_Files', 'Waiting.ui'),
+        'EDIT_ZAWODNIK_DIALOG': _asset_path('Ui_Files', 'EdytujZawodnika.ui'),
     }
 
     RESOURCES_PATHS_DICT = {
@@ -110,10 +112,10 @@ class Globals:
     @classmethod
     def _ensure_database_path(cls) -> None:
         """Tworzy katalog i plik bazy, jeśli nie istnieją."""
-        db_dir = os.path.dirname(cls.DB_PATH)
-        os.makedirs(db_dir, exist_ok=True)
-        if not os.path.exists(cls.DB_PATH):
-            with open(cls.DB_PATH, "a", encoding="utf-8"):
+        db_dir = pathlib.Path(cls.DB_PATH).parent.as_posix()
+        pathlib.Path(db_dir).mkdir(parents=True, exist_ok=True)
+        if not pathlib.Path(cls.DB_PATH).exists():
+            with pathlib.Path(cls.DB_PATH).open("a", encoding="utf-8"):
                 pass
 
     @staticmethod
@@ -181,6 +183,11 @@ class Globals:
             return ""
         parts = [p for p in raw.split("-") if p.strip()]
         if len(parts) >= 2:
-            return "-".join(p.strip().lower().capitalize() for p in parts)
+            result = ""
+            for p in parts:
+                p.capitalize()
+                result = result + (f"{p}-")
+            new_result = result[:-1]
+            return new_result
         return raw.lower().capitalize()
 

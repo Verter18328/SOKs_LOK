@@ -10,12 +10,32 @@ from PySide6.QtWidgets import QApplication, QDialog, QMainWindow
 from PySide6.QtCore import QDateTime
 from PySide6.QtGui import QIcon
 
-from data_manager import Konkurencja, Zawody
+from data_manager import Konkurencja, Seria, Zawody
 from globals import Globals
 Globals.set_main_directory()
 import Resources.resources_rc
-from signals_dialogs import SignalsKreatorKonkurencjiDialog, SignalsNewCompetitionDialog, SignalsZarejestrujSerieDialog
+from signals_dialogs import (
+    SignalsEdytujSerieDialog,
+    SignalsEdytujZawodnikaDialog,
+    SignalsKreatorKonkurencjiDialog,
+    SignalsNewCompetitionDialog,
+    SignalsZarejestrujSerieDialog,
+)
 from signals_operator_window import SignalsOperatorWindow
+
+
+class EdytujZawodnikaDialog(QDialog):
+    """Dialog edycji zawodnika — wrapper ładujący UI i podłączający sygnały."""
+
+    def __init__(self, global_config: Globals | None = None, parent=None, zawodnik_id: int = None) -> None:
+        super().__init__(parent)
+        global_config = global_config if global_config is not None else Globals()
+        _setup_window(self, global_config, "EDIT_ZAWODNIK_DIALOG", "Edytuj zawodnika")
+        self.signals = SignalsEdytujZawodnikaDialog(self.ui, parent, zawodnik_id)
+
+    def show_dialog(self) -> None:
+        """Wyświetla dialog."""
+        self.ui.show()
 
 
 def _setup_window(widget, global_config: Globals, ui_key: str, title: str) -> None:
@@ -38,7 +58,21 @@ class ZarejestrujSerieDialog(QDialog):
         super().__init__(parent)
         global_config = global_config if global_config is not None else Globals()
         _setup_window(self, global_config, "ZAREJESTRUJ_SERIE_DIALOG", "Zarejestruj serię")
-        self.signals = SignalsZarejestrujSerieDialog(self.ui, zawody=zawody, konkurencja=konkurencja, parent_window=self.parent())
+        self.signals = SignalsZarejestrujSerieDialog(self.ui, zawody=zawody, parent_window=self.parent())
+
+    def show_dialog(self) -> None:
+        """Wyświetla dialog."""
+        self.ui.show()
+
+
+class EdytujSerieDialog(QDialog):
+    """Dialog edycji serii — wrapper ładujący UI i podłączający sygnały."""
+
+    def __init__(self, global_config: Globals | None = None, parent=None, seria: Seria | None = None) -> None:
+        super().__init__(parent)
+        global_config = global_config if global_config is not None else Globals()
+        _setup_window(self, global_config, "EDIT_SERIA_DIALOG", "Edytuj serię")
+        self.signals = SignalsEdytujSerieDialog(self.ui, seria=seria, parent_window=self.parent())
 
     def show_dialog(self) -> None:
         """Wyświetla dialog."""

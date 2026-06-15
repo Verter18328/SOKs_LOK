@@ -7,11 +7,10 @@ Obsługiwane interakcje: prawy klik (menu kontekstowe) i podwójne kliknięcie.
 from globals import Globals
 Globals.set_main_directory()
 
-from PySide6.QtWidgets import QMenu, QListWidgetItem
+from PySide6.QtWidgets import QMenu, QListWidgetItem, QMessageBox
 from PySide6.QtCore import Qt, Signal, QObject
 
-from data_manager import zawody_data_manager
-
+from data_manager import seria_data_manager, zawody_data_manager, zawodnik_data_manager
 
 class ListaZawodowContextMenu(QObject):
     """Obsługuje menu kontekstowe dla listy zawodów.
@@ -78,3 +77,121 @@ class KonkurencjeListContextMenu(QObject):
     def usun_konkurencje(self, selected_item: QListWidgetItem) -> None:
         """Usuwa konkurencję — implementacja zależy od UI i logiki aplikacji."""
         self.ui.konkurencje_list.takeItem(self.ui.konkurencje_list.row(selected_item))
+
+
+class ZawodnicyListContextMenu(QObject):
+    """Menu kontekstowe dla listy zawodników w dialogu tworzenia zawodów."""
+
+    zawodnik_updated = Signal()
+
+    def __init__(self, ui) -> None:
+        super().__init__()
+        self.ui = ui
+        self.ui.listaZawodnikow.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.listaZawodnikow.customContextMenuRequested.connect(self.show_context_menu)
+
+    def show_context_menu(self, position) -> None:
+        """Wyświetla menu kontekstowe przy prawym kliknięciu."""
+        selected_item = self.ui.listaZawodnikow.itemAt(position)
+        if not selected_item:
+            return
+        menu = QMenu()
+        usun_action = menu.addAction("Usuń")
+        edytuj_action = menu.addAction("Edytuj")
+        action = menu.exec(self.ui.listaZawodnikow.mapToGlobal(position))
+        if action == usun_action:
+            self.usun_zawodnika(selected_item)
+        elif action == edytuj_action:
+            self.edytuj_zawodnika(selected_item)
+
+    def usun_zawodnika(self, selected_item: QListWidgetItem) -> None:
+        """Usuwa zawodnika z bazy (wraz z seriami i wynikami) i z listy w UI."""
+        zawodnik_id = selected_item.data(Qt.UserRole)
+        if not zawodnik_id:
+            return
+        answer = QMessageBox.question(
+            self.ui,
+            "Usuń zawodnika",
+            f"Czy na pewno usunąć „{selected_item.text()}”?\n"
+            "Zostaną też usunięte wszystkie serie i wyniki tego zawodnika.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+        if not zawodnik_data_manager.delete_zawodnik(zawodnik_id):
+            QMessageBox.warning(self.ui, "Błąd", "Nie udało się usunąć zawodnika.")
+            return
+        self.ui.listaZawodnikow.takeItem(self.ui.listaZawodnikow.row(selected_item))
+            
+    def edytuj_zawodnika(self, selected_item: QListWidgetItem) -> None:
+        """Edytuje zawodnika — implementacja zależy od UI i logiki aplikacji."""
+        from operator_ui_handler import EdytujZawodnikaDialog
+        dialog = EdytujZawodnikaDialog(parent=self.ui, zawodnik_id=selected_item.data(Qt.UserRole))
+        dialog.signals.zawodnik_updated.connect(self.zawodnik_updated.emit)
+        dialog.show_dialog()
+
+
+class StartyListContextMenu(QObject):
+    """Menu kontekstowe dla listy startów/serii.
+
+    Obsługuje usuwanie serii (z kaskadowym usunięciem strzałów po stronie DB)
+    oraz edycję serii poprzez dialog ``EdytujSerieDialog``.
+    """
+
+    seria_changed = Signal()
+
+    def __init__(self, ui) -> None:
+        super().__init__()
+        self.ui = ui
+        self.ui.starty_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.starty_list.customContextMenuRequested.connect(self.show_context_menu)
+
+    def show_context_menu(self, position) -> None:
+        """Wyświetla menu kontekstowe przy prawym kliknięciu na pozycji listy."""
+        selected_item = self.ui.starty_list.itemAt(position)
+        if not selected_item:
+            return
+        menu = QMenu()
+        usun_action = menu.addAction("Usuń")
+        edytuj_action = menu.addAction("Edytuj")
+        action = menu.exec(self.ui.starty_list.mapToGlobal(position))
+        if action == usun_action:
+            self.usun_serie(selected_item)
+        elif action == edytuj_action:
+            self.edytuj_serie(selected_item)
+
+    def usun_serie(self, selected_item: QListWidgetItem) -> None:
+        """Usuwa serię z bazy (z kaskadowym usunięciem strzałów) i z listy w UI."""
+        seria_id = selected_item.data(Qt.UserRole)
+        if not seria_id:
+            return
+        answer = QMessageBox.question(
+            self.ui,
+            "Usuń serię",
+            f"Czy na pewno usunąć „{selected_item.text()}”?\n"
+            "Zostaną też usunięte wszystkie wpisane wyniki tej serii.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+        if not seria_data_manager.delete_seria(seria_id):
+            QMessageBox.warning(self.ui, "Błąd", "Nie udało się usunąć serii.")
+            return
+        self.ui.starty_list.takeItem(self.ui.starty_list.row(selected_item))
+        self.seria_changed.emit()
+
+    def edytuj_serie(self, selected_item: QListWidgetItem) -> None:
+        """Otwiera dialog edycji serii dla wybranej pozycji listy."""
+        seria_id = selected_item.data(Qt.UserRole)
+        if not seria_id:
+            return
+        seria = seria_data_manager.get_seria_by_id(seria_id)
+        if not seria:
+            QMessageBox.warning(self.ui, "Błąd", "Nie udało się załadować serii.")
+            return
+        from operator_ui_handler import EdytujSerieDialog
+        dialog = EdytujSerieDialog(parent=self.ui, seria=seria)
+        dialog.signals.seria_updated.connect(self.seria_changed.emit)
+        dialog.show_dialog()
