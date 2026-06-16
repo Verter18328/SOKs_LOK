@@ -93,7 +93,7 @@ class Globals:
         'KREATOR_KONKURENCJI_DIALOG': _asset_path('Ui_Files', 'KreatorKonkurencji.ui'),
         'ZAREJESTRUJ_SERIE_DIALOG': _asset_path('Ui_Files', 'ZarejestrujSerie.ui'),
         'EDIT_SERIA_DIALOG': _asset_path('Ui_Files', 'EdytujSerie.ui'),
-        'TEMPORARY_DISPLAY': _asset_path('Ui_Files', 'TemporaryDisplay.ui'),
+        'TEMPORARY_DISPLAY': _asset_path('Ui_Files', 'TemporaryDisplayWindow.ui'),
         'WAITING_DISPLAY': _asset_path('Ui_Files', 'Waiting.ui'),
         'EDIT_ZAWODNIK_DIALOG': _asset_path('Ui_Files', 'EdytujZawodnika.ui'),
     }

@@ -4,7 +4,7 @@ from globals import Globals
 
 Globals.set_main_directory()
 
-from PySide6.QtCore import QObject, Qt, QStringListModel, QTimer, Signal
+from PySide6.QtCore import QObject, Qt, QStringListModel, QTimer, Signal, QDateTime
 from PySide6.QtWidgets import QCompleter, QListWidgetItem, QMessageBox
 
 from data_manager import (
@@ -287,17 +287,21 @@ class SignalsNewCompetitionDialog(QObject):
     """Obsługa dialogu tworzenia nowych zawodów."""
 
     zawody_created = Signal(object)
+    zawody_updated = Signal(object)
 
-    def __init__(self, ui, parent_window=None) -> None:
+    def __init__(self, ui, parent_window=None, zawody: Zawody | None = None) -> None:
         """Inicjalizuje dialog tworzenia zawodów z listą konkurencji i menu kontekstowym."""
         super().__init__()
         self.ui = ui
         self.parent_window = parent_window
+        self.zawody = zawody
         self.konkurencje: dict = {}
         from context_menus import KonkurencjeListContextMenu
         self.konkurencje_list_context_menu = KonkurencjeListContextMenu(self.ui)
         self.connect_signals()
         self.get_konkurencje()
+        if self.zawody:
+            self._fill_zawody_data()
 
     def connect_signals(self) -> None:
         """Podłącza przyciski dodawania konkurencji, combobox i akceptację formularza."""
@@ -357,24 +361,51 @@ class SignalsNewCompetitionDialog(QObject):
         self.konkurencje[konkurencja_obj.name] = konkurencja_obj
         self._refresh_konkurencje_combobox()
 
+    def _fill_zawody_data(self) -> None:
+        """Wypełnia formularz danymi istniejących zawodów (tryb edycji)."""
+        if not self.zawody:
+            return
+        self.ui.lineEdit_nazwa_zawodow.setText(self.zawody.nazwa)
+        qdt = QDateTime.fromString(
+            self.zawody.date_time.strftime(Globals.TIMESTAMP_FORMAT_PY),
+            Globals.TIMESTAMP_FORMAT_QT,
+        )
+        if qdt.isValid():
+            self.ui.dateTimeEdit_data_zawodow.setDateTime(qdt)
+        for konkurencja in self.zawody.konkurencje.values():
+            self._add_konkurencja_to_list_widget(konkurencja)
+
     def accepted(self) -> None:
-        """Waliduje dane zawodów, zapisuje je w bazie i emituje sygnał ``zawody_created``."""
+        """Waliduje dane zawodów, zapisuje je w bazie i emituje odpowiedni sygnał."""
         selected_nazwa = self.ui.lineEdit_nazwa_zawodow.text()
         selected_datetime = self.ui.dateTimeEdit_data_zawodow.dateTime().toString(
             Globals.TIMESTAMP_FORMAT_QT
         )
         selected_konkurencje = self._get_selected_konkurencje()
+        edit_mode = self.zawody is not None
 
-        validator = NewZawodyDataValidation(selected_nazwa, selected_datetime, selected_konkurencje)
+        validator = NewZawodyDataValidation(
+            selected_nazwa, selected_datetime, selected_konkurencje, edit_mode=edit_mode
+        )
         is_valid, message = validator.is_valid_result
         if not is_valid:
             QMessageBox.warning(self.ui, "Błąd", message)
             return
-        zawody_obj = zawody_data_manager.insert_zawody(
-            selected_nazwa, selected_datetime, selected_konkurencje
-        )
-        
-        self.zawody_created.emit(zawody_obj)
+
+        if edit_mode:
+            zawody_obj = zawody_data_manager.update_zawody(
+                self.zawody.id, selected_nazwa, selected_datetime, selected_konkurencje
+            )
+            if not zawody_obj:
+                QMessageBox.warning(self.ui, "Błąd", "Nie udało się zaktualizować zawodów.")
+                return
+            self.zawody_updated.emit(zawody_obj)
+        else:
+            zawody_obj = zawody_data_manager.insert_zawody(
+                selected_nazwa, selected_datetime, selected_konkurencje
+            )
+            self.zawody_created.emit(zawody_obj)
+
         self.ui.close()
 
 

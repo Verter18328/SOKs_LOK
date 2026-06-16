@@ -5,8 +5,12 @@ from PySide6.QtWidgets import QApplication, QTableWidgetItem
 from PySide6.QtGui import QHeaderView
 from PySide6.QtCore import QTimer
 
-from data_manager import Zawody, SeriaDataManager, Konkurencja, WynikDataManager, ZawodnikDataManager
-
+from data_manager import (
+    Zawody,
+    Konkurencja,
+    wynik_data_manager, 
+    seria_data_manager,
+)
 
 class PlebsDisplay:
 
@@ -73,18 +77,16 @@ class PlebsDisplay:
         self.window.name_label.setText(self.current_zawody.nazwa)
         self.window.tableWidget.clearContents()
         self.window.tableWidget.setRowCount(0)
-        all_serie = SeriaDataManager.get_all_series_by_zawody_and_konkurencja(self.current_zawody.id, self.current_konkurencja.id)
+        all_serie = seria_data_manager.get_all_series_by_zawody_and_konkurencja(self.current_zawody.id, self.current_konkurencja.id)
         if not all_serie:
             return False, "Serie nie znalezione"
         for seria in all_serie:
-            wyniki = WynikDataManager.get_all_wyniki_by_seria_id(seria.id)
+            wyniki = wynik_data_manager.get_all_wyniki_by_seria_id(seria.id)
             if not wyniki:
                 continue
             self.window.tableWidget.insertRow(self.window.tableWidget.rowCount())
-            zawodnik = ZawodnikDataManager.get_zawodnik_by_id(seria.zawodnik_id)
-            if not zawodnik:
-                return False, "Zawodnik nie znaleziony"
-            item = QTableWidgetItem(f"{zawodnik.imie} {zawodnik.nazwisko}")
+            zawodnik = seria.zawodnik
+            item = QTableWidgetItem(zawodnik.label)
             self.window.tableWidget.setItem(self.window.tableWidget.rowCount() - 1, 0, item)
             for wynik in wyniki:
                 item = QTableWidgetItem(str(wynik.punkty))

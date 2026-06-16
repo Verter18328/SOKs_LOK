@@ -44,10 +44,11 @@ class NewZawodyDataValidation:
     Atrybut `is_valid_result` zawiera krotkę `(bool, message)`.
     """
 
-    def __init__(self, nazwa: str, date_time: str, konkurencje: dict) -> None:
+    def __init__(self, nazwa: str, date_time: str, konkurencje: dict, *, edit_mode: bool = False) -> None:
         self.nazwa = nazwa
         self.date_time = date_time
         self.konkurencje = konkurencje
+        self.edit_mode = edit_mode
         self.is_valid_result: tuple[bool, str] = self.is_valid()
 
     def is_valid(self) -> tuple[bool, str]:
@@ -72,8 +73,8 @@ class NewZawodyDataValidation:
         if zawody_datetime is None:
             return False, "Nieprawidłowy format daty i czasu."
 
-        # 4. Data nie może być w przeszłości
-        if zawody_datetime < datetime.datetime.now():
+        # 4. Data nie może być w przeszłości (przy tworzeniu nowych zawodów)
+        if not self.edit_mode and zawody_datetime < datetime.datetime.now():
             return False, "Data i czas zawodów nie mogą być w przeszłości."
 
         # 5. Musi być co najmniej jedna konkurencja

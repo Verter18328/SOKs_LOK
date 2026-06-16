@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QApplication, QDialog, QMainWindow
 from PySide6.QtCore import QDateTime
 from PySide6.QtGui import QIcon
 
-from data_manager import Konkurencja, Seria, Zawody
+from data_manager import Konkurencja, Seria, Zawody, zawody_data_manager
 from globals import Globals
 Globals.set_main_directory()
 import Resources.resources_rc
@@ -107,6 +107,22 @@ class NoweZawodyDialog(QDialog):
 
         self.parent_window = parent
         self.signals = SignalsNewCompetitionDialog(self.ui, self.parent_window)
+
+    def show_dialog(self) -> None:
+        """Wyświetla dialog."""
+        self.ui.show()
+
+
+class EdytujZawodyDialog(QDialog):
+    """Dialog edycji zawodów — wrapper ładujący UI i podłączający sygnały."""
+
+    def __init__(self, global_config: Globals | None = None, parent=None, zawody_id: int | None = None) -> None:
+        super().__init__(parent)
+        global_config = global_config if global_config is not None else Globals()
+        _setup_window(self, global_config, "NEW_COMPETITION_DIALOG", "Edytuj zawody")
+
+        zawody = zawody_data_manager.get_zawody_by_id(zawody_id) if zawody_id else None
+        self.signals = SignalsNewCompetitionDialog(self.ui, parent, zawody=zawody)
 
     def show_dialog(self) -> None:
         """Wyświetla dialog."""

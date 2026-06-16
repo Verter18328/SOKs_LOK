@@ -414,6 +414,7 @@ class SignalsOperatorWindow:
 
             self.lista_zawodow_menu = ListaZawodowContextMenu(self.ui)
             self.lista_zawodow_menu.zawody_selected.connect(self.on_zawody_selected)
+            self.lista_zawodow_menu.zawody_list_changed.connect(self._on_zawody_list_changed)
 
     def on_zawody_selected(self, zawody_obj) -> None:
         """Po wyborze zawodów z listy — ładuje stronę zarządzania z tabelami wyników."""
@@ -422,6 +423,17 @@ class SignalsOperatorWindow:
         self.ui.stackedWidget.setCurrentWidget(self.ui.pageZawody_managment)
         self.ui.tabWidget_zawody.clear()
         self.zawody_management_page_entered()
+
+    def _on_zawody_list_changed(self) -> None:
+        """Odświeża listę zawodów po edycji lub usunięciu z menu kontekstowego."""
+        current = getattr(self.ui.pageZawody_managment, "zawody_data", None)
+        if current and getattr(current, "id", None):
+            still_exists = zawody_data_manager.get_zawody_by_id(current.id)
+            if not still_exists:
+                self.ui.pageZawody_managment.zawody_data = None
+                if self.ui.stackedWidget.currentWidget() == self.ui.pageZawody_managment:
+                    self.ui.stackedWidget.setCurrentWidget(self.ui.pageLista_zawodow)
+        self.zarzadzanie_zawodami_triggered()
 
 
     def sort_seria_button_clicked(self) -> None:

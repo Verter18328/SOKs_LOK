@@ -332,6 +332,61 @@ class ZawodyDataManager:
 
         return self.get_zawody_by_id(latest_id)
 
+    def update_zawody(
+        self, zawody_id: int, nazwa: str, date_time: str, konkurencje: dict
+    ) -> Zawody | None:
+        """Aktualizuje dane zawodów i synchronizuje przypisane konkurencje."""
+        dt = None
+        for fmt in (Globals.TIMESTAMP_FORMAT_PY, Globals.TIMESTAMP_FORMAT_QT):
+            try:
+                dt = datetime.datetime.strptime(date_time, fmt)
+                break
+            except ValueError:
+                continue
+        if dt is None:
+            return None
+        query = "UPDATE zawody_lista SET nazwa = ?, data = ?, godzina = ? WHERE id = ?"
+        result = self.database.query(
+            query,
+            (
+                nazwa,
+                dt.strftime(Globals.DATE_FORMAT_PY),
+                dt.strftime(Globals.TIME_FORMAT_PY),
+                zawody_id,
+            ),
+        )
+        if result is None or result == 0:
+            return None
+
+        current = self.get_konkurencje_assigned_to_zawody(zawody_id)
+        current_ids = {k.id for k in current.values()}
+        new_ids = {k.id for k in konkurencje.values()}
+
+        for konkurencja_id in current_ids - new_ids:
+            series = seria_data_manager.get_all_series_by_zawody_and_konkurencja(
+                zawody_id, konkurencja_id
+            )
+            if series:
+                for seria in series:
+                    seria_data_manager.delete_seria(seria.id)
+            self.database.query(
+                "DELETE FROM zawody_konkurencje_link WHERE zawody_id = ? AND konkurencja_id = ?",
+                (zawody_id, konkurencja_id),
+            )
+
+        link_query = "INSERT INTO zawody_konkurencje_link (zawody_id, konkurencja_id) VALUES (?, ?)"
+        for konkurencja_id in new_ids - current_ids:
+            self.database.query(link_query, (zawody_id, konkurencja_id))
+
+        return self.get_zawody_by_id(zawody_id)
+
+    def delete_zawody(self, zawody_id: int) -> bool:
+        """Usuwa zawody po ID (serie, strzały i linki konkurencji — kaskada FK w bazie)."""
+        result = self.database.query("DELETE FROM zawody_lista WHERE id = ?", (zawody_id,))
+        if result is None or result == 0:
+            return False
+        return True
+
     def get_konkurencje_assigned_to_zawody(self, zawody_id: int) -> dict[str, Konkurencja]:
         """Zwraca słownik przypisanych konkurencji dla podanego `zawody_id`."""
         query = "SELECT konkurencja_id FROM zawody_konkurencje_link WHERE zawody_id = ?"
