@@ -1,163 +1,279 @@
-# SOKs_LOK
+# System Obsługi Konkurencji Strzeleckich (SOKs_LOK)
 
-System obsługi konkurencji strzeleckich oparty o `PySide6` i `SQLite`.
-Aplikacja wspiera organizację zawodów, rejestrację serii i wprowadzanie wyników
-z poziomu desktopowego interfejsu operatora.
+Aplikacja desktopowa (PySide6) do obsługi operacyjnej zawodów strzeleckich:
+tworzenie zawodów i konkurencji, rejestracja serii zawodników, wprowadzanie
+wyników strzałów oraz prezentacja rankingu — także na drugim ekranie (TV/HDMI)
+dla publiczności.
 
-## Co to jest?
+| | |
+|---|---|
+| **Nazwa** | System Obsługi Konkurencji Strzeleckich |
+| **Skrót** | SOKs_LOK |
+| **Platforma** | Windows (desktop) · Python 3.11+ |
+| **Interfejs** | PySide6 (Qt) — okno operatora + ekran dla publiczności |
+| **Dane** | SQLite (lokalny plik, tworzony przy starcie) |
+| **Wydania** | [GitHub Releases](https://github.com/Verter18328/SOKs_LOK/releases) |
+| **Licencja** | Własnościowa (proprietary) — projekt nie jest open source |
 
-`SOKs_LOK` to aplikacja desktopowa do pracy operacyjnej podczas zawodów
-strzeleckich. Projekt skupia się na prostym i szybkim workflow:
+---
 
-- tworzenie zawodów i konkurencji,
-- przypisywanie zawodników do serii,
-- wprowadzanie wyników strzałów,
-- prezentowanie i porządkowanie wyników.
+## Wizja projektu
+
+SOKs_LOK powstał na potrzeby konkretnej, lokalnej strzelnicy. Obecny zakres to
+**aplikacja operatora pojedynczych zawodów**, ale docelowo projekt zmierza
+w stronę **systemu obsługującego całą strzelnicę** (stanowiska, wyświetlacze,
+infrastruktura sieciowa, role użytkowników).
+
+Warstwy wrażliwe (konfiguracja sieci, integracje sprzętowe, dane osobowe)
+będą rozwijane w sposób oddzielony od publicznie widocznego kodu logiki
+aplikacji — zob. [Bezpieczeństwo i dane wrażliwe](#bezpieczeństwo-i-dane-wrażliwe).
+
+---
 
 ## Najważniejsze funkcje
 
-- Zarządzanie zawodami (nazwa, data i godzina).
-- Definiowanie konkurencji wraz z liczbą strzałów.
-- Rejestracja serii zawodników.
-- Walidacja danych wejściowych podczas edycji wyników.
-- Obsługa rankingu/sortowania wyników w UI.
-- Lokalna baza `SQLite` tworzona automatycznie przy starcie.
+| Obszar | Opis |
+|--------|------|
+| Zawody | Tworzenie i edycja zawodów (nazwa, data, godzina) |
+| Konkurencje | Definiowanie konkurencji wraz z liczbą strzałów |
+| Zawodnicy | Rejestr zawodników z normalizacją imienia i nazwiska |
+| Serie | Rejestracja serii (start zawodnika w danej konkurencji) |
+| Wyniki | Wprowadzanie i edycja punktów poszczególnych strzałów z walidacją |
+| Ranking | Sortowanie i porządkowanie wyników w interfejsie |
+| Ekran publiczności | Wyświetlanie wyników na drugim monitorze (TV/HDMI), cykliczne odświeżanie |
+| Baza danych | Lokalna `SQLite` z relacjami i kaskadowym usuwaniem (`ON DELETE CASCADE`) |
 
-## Technologie
+---
 
-- Python 3.11+
-- PySide6 (interfejs graficzny)
-- SQLite (lokalna baza danych)
-- Qt Designer `.ui` (widoki)
+## Jak to działa
 
-## Struktura projektu
-
-```text
-SOKs_LOK/
-├─ Code/                # logika aplikacji (UI handlers, sygnały, data manager)
-├─ Ui_Files/            # pliki widoków Qt (.ui)
-├─ Resources/           # zasoby statyczne (np. logo)
-├─ Database_Files/      # lokalna baza danych SQLite (katalog tworzony przy pierwszym starcie)
-├─ requirements.txt     # zależności uruchomieniowe
-├─ requirements-dev.txt # PyInstaller + build (opcjonalnie)
-├─ SOKs_LOK.spec        # konfiguracja pakietu EXE (Windows)
-└─ README.md
+```mermaid
+flowchart TD
+  START[Start aplikacji] --> OP[Okno operatora]
+  OP --> Z[Utworzenie zawodów]
+  Z --> K[Definicja konkurencji - liczba strzalow]
+  K --> S[Rejestracja serii zawodnikow]
+  S --> W[Wprowadzanie wynikow strzalow]
+  W --> V[Walidacja danych wejsciowych]
+  V --> R[Ranking i sortowanie]
+  R --> D[Ekran publicznosci - TV/HDMI]
+  W --> DB[(SQLite)]
+  R --> DB
 ```
 
-## Szybki start (po sklonowaniu z GitHuba)
+| Krok | Opis |
+|------|------|
+| 1 | Operator uruchamia aplikację; baza i schemat tworzą się automatycznie przy pierwszym połączeniu |
+| 2 | Tworzy zawody (nazwa, data, godzina) |
+| 3 | Definiuje konkurencje wraz z liczbą strzałów |
+| 4 | Rejestruje serie — przypisuje zawodników do konkurencji w ramach zawodów |
+| 5 | Wprowadza wyniki strzałów; dane są walidowane przed zapisem |
+| 6 | Wyniki są sortowane i prezentowane jako ranking |
+| 7 | Opcjonalnie: ranking jest wyświetlany na drugim ekranie dla publiczności (odświeżanie co kilka sekund) |
 
-Wymagania: **Python 3.11 lub nowszy** (64-bit zalecany na Windows), dostęp do internetu przy pierwszej instalacji pakietów.
+---
 
-### 1. Repozytorium i środowisko wirtualne (zalecane)
+## Architektura
+
+Projekt jest modularny — logika UI, walidacja i dostęp do danych są rozdzielone.
+
+| Warstwa | Moduły | Odpowiedzialność |
+|---------|--------|------------------|
+| Punkt wejścia | `operator_ui_handler.py` | Ładowanie okien/dialogów z plików `.ui`, start pętli Qt |
+| Sygnały / logika UI | `signals_operator_window.py`, `signals_dialogs.py`, `context_menus.py` | Obsługa zdarzeń, nawigacja, menu kontekstowe list |
+| Model i dostęp do danych | `data_manager.py` | Modele (`Zawody`, `Konkurencja`, `Zawodnik`, `Seria`, `Wynik`) i menedżery CRUD |
+| Walidacja | `data_validation.py` | Sprawdzanie poprawności danych wejściowych |
+| Sortowanie | `sort_methods.py` | Logika rankingu / porządkowania wyników |
+| Połączenie z bazą | `database_connection.py` | Wrapper SQLite z auto-rozłączaniem i kaskadami FK |
+| Konfiguracja globalna | `globals.py` | Ścieżki (dev/EXE), formaty dat, bootstrap bazy |
+| Ekran publiczności | `plebs_display.py` | Drugi monitor (TV/HDMI), cykliczne odświeżanie wyników |
+
+---
+
+## Wymagania
+
+| Komponent | Uwagi |
+|-----------|----------------|
+| Python | 3.11 lub nowszy (zalecany 64-bit na Windows) |
+| Zależności | `pip install -r requirements.txt` (PySide6) |
+| Sprzęt (opcjonalnie) | Drugi monitor / TV dla ekranu publiczności |
+
+---
+
+## Instalacja i uruchomienie
+
+### Windows — pakiet z GitHub Releases
+
+Gotowy build (EXE) publikowany jest w sekcji
+[GitHub Releases](https://github.com/Verter18328/SOKs_LOK/releases).
+Rozpakuj archiwum i uruchom `SOKs_LOK.exe` z całego folderu dystrybucyjnego
+(nie kopiuj samego pliku `.exe` bez `_internal/`). Baza danych `Database_Files/Database.db`
+powstanie przy pierwszym uruchomieniu obok `SOKs_LOK.exe`.
+
+Szczegóły pierwszego uruchomienia (antywirus, SmartScreen): zob.
+[Antywirus i pierwsze uruchomienie (Windows)](#antywirus-i-pierwsze-uruchomienie-windows).
+
+### Antywirus i pierwsze uruchomienie (Windows)
+
+Aplikacja dystrybuowana jako plik `.exe` (PyInstaller) **nie jest podpisana**
+certyfikatem code signing — to typowe dla małych projektów. Przy **pierwszym**
+uruchomieniu na Windows może się zdarzyć:
+
+| Objaw | Co to znaczy | Co zrobić |
+|-------|--------------|-----------|
+| Dłuższe uruchamianie (10–60 s) | Windows Defender lub antywirus skanuje nowy plik | Poczekaj — kolejne uruchomienia są zwykle szybsze |
+| **Windows SmartScreen** — „Nieznany wydawca” / „Windows chronił Twój komputer” | Brak podpisu cyfrowego wydawcy | **Więcej informacji** → **Uruchom mimo to** (tylko jeśli pobrałeś plik z [GitHub Releases](https://github.com/Verter18328/SOKs_LOK/releases)) |
+| Alert antywirusu (rzadziej) | Fałszywy alarm (false positive) na spakowany PyInstaller | Dodaj folder aplikacji do wyjątków lub zgłoś false positive; pobieraj wyłącznie z oficjalnego release |
+
+**Zalecenia:**
+
+- Pobieraj tylko z oficjalnego repozytorium GitHub (Releases), nie z nieznanych mirrorów.
+- Nie uruchamiaj samego `.exe` bez folderu `_internal/` — to uszkodzona instalacja.
+- Aplikacja nie wymaga uprawnień administratora ani dostępu do sieci do podstawowej pracy.
+
+### Uruchomienie ze źródeł (deweloperskie)
 
 Z katalogu, w którym trzymasz projekty:
 
 ```bash
-git clone <adres HTTPS repozytorium z GitHuba>
+git clone https://github.com/Verter18328/SOKs_LOK.git
 cd SOKs_LOK
 python -m venv .venv
 ```
 
-**Windows (PowerShell)** — aktywacja venv:
+Aktywacja środowiska wirtualnego:
 
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-**Linux / macOS:**
-
-```bash
-source .venv/bin/activate
-```
-
-### 2. Instalacja zależności
+| System | Polecenie |
+|--------|-----------|
+| Windows (PowerShell) | `.\.venv\Scripts\Activate.ps1` |
+| Linux / macOS | `source .venv/bin/activate` |
 
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
-```
-
-(Instalowany jest m.in. **PySide6**.)
-
-### 3. Uruchomienie aplikacji
-
-Uruchamiaj z **korzenia repozytorium** (katalog `SOKs_LOK`, tam gdzie leży `README.md`):
-
-```bash
 python Code/operator_ui_handler.py
 ```
 
-Na Windows, jeśli polecenie `python` nie działa, spróbuj:
+> Uruchamiaj z **korzenia repozytorium** (katalog `SOKs_LOK`, tam gdzie leży `README.md`).
+> Na Windows, jeśli `python` nie działa, użyj `py -3.11 Code/operator_ui_handler.py`.
 
-```powershell
-py -3.11 Code/operator_ui_handler.py
+> **Uwaga o platformie:** aplikacja jest projektowana pod **Windows** (build EXE,
+> a funkcja rozszerzenia drugiego ekranu używa systemowego `DisplaySwitch.exe`).
+> Na Linux/macOS część logiki uruchomi się w środowisku deweloperskim, ale
+> ekran dla publiczności w trybie rozszerzonym nie zadziała.
+
+### Kolejne uruchomienia
+
+```bash
+cd SOKs_LOK
+# aktywuj .venv — patrz tabela wyżej
+python Code/operator_ui_handler.py
 ```
-
-Po uruchomieniu aplikacja:
-
-- ładuje interfejs z plików `.ui`,
-- inicjalizuje połączenie z bazą danych,
-- tworzy katalog `Database_Files` i plik bazy, jeśli jeszcze nie istnieją,
-- tworzy wymagane tabele w SQLite przy pierwszym połączeniu.
 
 ### Typowe problemy
 
-| Objaw | Co zrobić |
-|--------|-----------|
-| `ModuleNotFoundError: No module named 'PySide6'` | Upewnij się, że aktywowałeś `.venv` i wykonałeś `pip install -r requirements.txt` w tym samym środowisku. |
-| `No module named 'data_manager'` / `Resources` | Uruchom skrypt z katalogu głównego projektu (`python Code/operator_ui_handler.py`), nie kopiuj plików `.py` poza strukturę repo. |
+| Objaw | Rozwiązanie |
+|-------|-------------|
+| `ModuleNotFoundError: No module named 'PySide6'` | Aktywuj `.venv` i wykonaj `pip install -r requirements.txt` w tym samym środowisku |
+| `No module named 'data_manager'` / `Resources` | Uruchom z katalogu głównego projektu, nie kopiuj plików `.py` poza strukturę repo |
 | PowerShell blokuje `Activate.ps1` | Jednorazowo: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` |
+| SmartScreen blokuje `SOKs_LOK.exe` | Pobierz z [GitHub Releases](https://github.com/Verter18328/SOKs_LOK/releases); **Więcej informacji** → **Uruchom mimo to** — patrz [Antywirus i pierwsze uruchomienie](#antywirus-i-pierwsze-uruchomienie-windows) |
+| Długi start przy pierwszym uruchomieniu EXE | Skan antywirusa — poczekaj; kolejne starty są zwykle szybsze |
+
+---
 
 ## Baza danych
 
-Domyślna lokalizacja bazy:
+Domyślna lokalizacja: `Database_Files/Database.db` (ignorowana przez Git).
 
-`Database_Files/Database.db`
+| Tabela | Zawartość |
+|--------|-----------|
+| `zawody_lista` | Zawody (nazwa, data, godzina) |
+| `konkurencje_lista` | Konkurencje (liczba strzałów itd.) |
+| `zawody_konkurencje_link` | Powiązanie zawodów z konkurencjami (relacja N:N) |
+| `zawodnicy` | Zawodnicy |
+| `starty` | Serie / starty zawodników w konkurencji |
+| `strzaly` | Pojedyncze strzały (numer, punkty) |
 
-Schemat obejmuje m.in. tabele:
+Relacje rodzic → dziecko korzystają z `ON DELETE CASCADE` / `ON UPDATE CASCADE`,
+aby usuwanie i zmiana ID nie kończyły się błędem `FOREIGN KEY constraint failed`.
 
-- `konkurencje_lista`
-- `zawodnicy`
-- `zawody_lista`
-- `zawody_konkurencje_link`
-- `starty`
-- `strzaly`
+---
 
-## Uwagi dla dewelopera
+## Struktura repozytorium
 
-- Projekt korzysta z podejścia modularnego: logika UI, walidacja i dostęp do
-  danych są rozdzielone na osobne moduły.
-- Główny punkt wejścia aplikacji znajduje się w `Code/operator_ui_handler.py`.
-- Plik bazy danych (`Database.db`) jest ignorowany przez Git.
+```
+SOKs_LOK/
+├─ Code/                       # logika aplikacji
+│  ├─ operator_ui_handler.py   # punkt wejścia (okna i dialogi)
+│  ├─ signals_operator_window.py
+│  ├─ signals_dialogs.py
+│  ├─ context_menus.py
+│  ├─ data_manager.py          # modele i menedżery danych (CRUD)
+│  ├─ data_validation.py
+│  ├─ sort_methods.py
+│  ├─ database_connection.py   # wrapper SQLite
+│  ├─ globals.py               # konfiguracja, ścieżki, formaty dat
+│  └─ plebs_display.py         # ekran dla publiczności (TV/HDMI)
+├─ Ui_Files/                   # widoki Qt Designer (.ui)
+├─ Resources/                  # zasoby (logo) + resources_rc.py
+├─ Database_Files/             # baza SQLite (tworzona przy starcie)
+├─ requirements.txt            # zależności uruchomieniowe
+├─ requirements-dev.txt        # PyInstaller (opcjonalnie, build lokalny)
+├─ CHANGELOG.md                # historia wydaniań
+├─ LICENSE                     # licencja własnościowa
+├─ THIRD_PARTY_NOTICES.md      # noty o komponentach zewnętrznych
+└─ README.md
+```
+
+---
 
 ## Status projektu
 
-**Wersja 0.1** — zamknięta po testach terenowych; zakres: pojedyncze zawody, serie,
-wyniki, ranking (bez formalnego „zamknięcia” zawodów w aplikacji — to 1.0).
+| Zrobione | Planowane |
+|----------|-----------|
+| Tworzenie/edycja zawodów i konkurencji | Formalne „zamknięcie” zawodów w aplikacji |
+| Rejestracja serii i zawodników | Druk i eksport wyników |
+| Wprowadzanie i walidacja wyników strzałów | Ekran wyników w QML (HDMI) |
+| Ranking i sortowanie w UI | Wyszukiwanie zawodów po nazwie i dacie |
+| Ekran dla publiczności (drugi monitor) | — |
+| Lokalna baza SQLite z kaskadami FK | Rozbudowa do systemu całej strzelnicy |
 
-Kolejny etap: **1.0** (druk, eksport, ekran HDMI/QML, `zamknij_zawody_button` itd.).
+---
 
-## Budowanie pliku EXE (Windows, PyInstaller)
+## Bezpieczeństwo i dane wrażliwe
 
-1. Zainstaluj zależności deweloperskie (w tym PyInstaller):
+- Baza `Database_Files/Database.db` jest **ignorowana przez Git** — nie commituj
+  bazy ani jej kopii zapasowych (zawiera dane osobowe zawodników).
+- Nie umieszczaj w repozytorium sekretów, danych logowania ani konfiguracji
+  produkcyjnej — także w wersji „deweloperskiej”.
+- Przy rozwoju do systemu całej strzelnicy konfiguracja sieci i integracje
+  sprzętowe powinny być trzymane poza publiczną częścią repozytorium.
+- Wdrożenia przetwarzające dane osobowe zawodników u podmiotów trzecich
+  wymagają osobnego uregulowania kwestii ochrony danych (RODO).
 
-   ```powershell
-   pip install -r requirements-dev.txt
-   ```
+---
 
-2. Z katalogu głównego repozytorium (obok `SOKs_LOK.spec`):
+## Licencja
 
-   ```powershell
-   pyinstaller SOKs_LOK.spec
-   ```
+Copyright © 2025–2026 **Verter18328**. Wszelkie prawa zastrzeżone.
 
-3. Wynik: folder `dist/SOKs_LOK/` z plikiem `SOKs_LOK.exe` oraz podkatalogiem
-   `_internal/` (PyInstaller 6 umieszcza tam m.in. `Ui_Files/` i `Resources/`).
-   **Skopiuj cały folder `dist/SOKs_LOK/`** na komputer docelowy (nie tylko sam
-   `.exe`). Baza `Database_Files/Database.db` powstanie przy pierwszym
-   uruchomieniu **obok `SOKs_LOK.exe`** (zapisywalny katalog użytkownika).
+Projekt **nie jest open source**. Publiczna dostępność kodu w repozytorium nie
+udziela prawa do kopiowania, modyfikacji ani dystrybucji bez pisemnej zgody
+właściciela. Wdrożenia u podmiotów trzecich (np. inne strzelnice) wymagają
+odrębnej umowy licencyjnej.
 
-Uwagi:
+- Pełna licencja: [`LICENSE`](LICENSE)
+- Komponenty zewnętrzne (PySide6/Qt, SQLite): [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
 
-- Buduj na tej samej architekturze co docelowy PC (zwykle **64-bit Windows**).
-- Antywirus może pierwszy raz dłużej skanować świeży plik z PyInstaller.
+---
+
+## Informacje o projekcie
+
+| Pole | Wartość |
+|------|---------|
+| Repozytorium | https://github.com/Verter18328/SOKs_LOK |
+| Wydania | https://github.com/Verter18328/SOKs_LOK/releases |
+| Historia zmian | [`CHANGELOG.md`](CHANGELOG.md) |
+| Autor | [Verter18328](https://github.com/Verter18328) |
+| Licencja | Własnościowa — [`LICENSE`](LICENSE) |

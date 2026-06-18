@@ -253,34 +253,62 @@ class SignalsEdytujSerieDialog(QObject):
 
 
 class SignalsKreatorKonkurencjiDialog(QObject):
-    """Obsługa sygnałów w dialogu tworzenia konkurencji."""
+    """Obsługa sygnałów w dialogu tworzenia/edycji konkurencji."""
 
     konkurencja_created = Signal(object)
+    konkurencja_updated = Signal(object)
 
-    def __init__(self, ui, parent_window=None) -> None:
-        """Inicjalizuje dialog kreatora konkurencji."""
+    def __init__(self, ui, parent_window=None, konkurencja: Konkurencja | None = None) -> None:
+        """Inicjalizuje dialog kreatora konkurencji (tryb tworzenia lub edycji)."""
         super().__init__()
         self.ui = ui
         self.parent_window = parent_window
+        self.konkurencja = konkurencja
         self.connect_signals()
+        if self.konkurencja:
+            self._fill_konkurencja_data()
 
     def connect_signals(self) -> None:
         """Podłącza akceptację i anulowanie dialogu."""
         self.ui.buttonBox.accepted.connect(self.accepted)
         self.ui.buttonBox.rejected.connect(self.ui.close)
 
+    def _fill_konkurencja_data(self) -> None:
+        """Wypełnia formularz danymi istniejącej konkurencji (tryb edycji)."""
+        if not self.konkurencja:
+            return
+        self.ui.lineEdit_name.setText(self.konkurencja.name)
+        self.ui.spinBox_shots_quantity.setValue(self.konkurencja.shots_quantity)
+
     def accepted(self) -> None:
-        """Waliduje dane i zapisuje nową konkurencję; emituje sygnał ``konkurencja_created``."""
+        """Waliduje dane i zapisuje konkurencję; emituje sygnał utworzenia lub aktualizacji."""
         shots_quantity = self.ui.spinBox_shots_quantity.value()
-        name = self.ui.lineEdit_name.text()
+        name = self.ui.lineEdit_name.text().strip()
         validator = NewKonkurencjaDataValidation(shots_quantity, name)
         is_valid, message = validator.is_valid_result
         if not is_valid:
             QMessageBox.warning(self.ui, "Błąd", message)
             return
-        konkurencja_obj = konkurencja_data_manager.insert_konkurencja(name, shots_quantity)
-        self.ui.close()
-        self.konkurencja_created.emit(konkurencja_obj)
+        existing = konkurencja_data_manager.get_konkurencja_by_name(name)
+        if existing and (not self.konkurencja or existing.id != self.konkurencja.id):
+            QMessageBox.warning(self.ui, "Błąd", "Konkurencja o tej nazwie już istnieje.")
+            return
+        if self.konkurencja:
+            konkurencja_obj = konkurencja_data_manager.update_konkurencja(
+                self.konkurencja.id, name, shots_quantity
+            )
+            if not konkurencja_obj:
+                QMessageBox.warning(self.ui, "Błąd", "Nie udało się zaktualizować konkurencji.")
+                return
+            self.ui.close()
+            self.konkurencja_updated.emit(konkurencja_obj)
+        else:
+            konkurencja_obj = konkurencja_data_manager.insert_konkurencja(name, shots_quantity)
+            if not konkurencja_obj:
+                QMessageBox.warning(self.ui, "Błąd", "Nie udało się utworzyć konkurencji.")
+                return
+            self.ui.close()
+            self.konkurencja_created.emit(konkurencja_obj)
 
 
 class SignalsNewCompetitionDialog(QObject):
@@ -298,6 +326,8 @@ class SignalsNewCompetitionDialog(QObject):
         self.konkurencje: dict = {}
         from context_menus import KonkurencjeListContextMenu
         self.konkurencje_list_context_menu = KonkurencjeListContextMenu(self.ui)
+        self.konkurencje_list_context_menu.konkurencja_edytowana.connect(self.on_konkurencja_edited)
+        self.konkurencje_list_context_menu.konkurencja_usunieta_z_bazy.connect(self.on_konkurencja_deleted)
         self.connect_signals()
         self.get_konkurencje()
         if self.zawody:
@@ -359,6 +389,22 @@ class SignalsNewCompetitionDialog(QObject):
         """Po utworzeniu konkurencji — dodaje ją do listy i odświeża combobox."""
         self._add_konkurencja_to_list_widget(konkurencja_obj)
         self.konkurencje[konkurencja_obj.name] = konkurencja_obj
+        self._refresh_konkurencje_combobox()
+
+    def on_konkurencja_edited(self, konkurencja_obj) -> None:
+        """Po edycji konkurencji — odświeża słownik i combobox."""
+        old_name = next(
+            (name for name, k in self.konkurencje.items() if k.id == konkurencja_obj.id),
+            None,
+        )
+        if old_name and old_name != konkurencja_obj.name:
+            del self.konkurencje[old_name]
+        self.konkurencje[konkurencja_obj.name] = konkurencja_obj
+        self._refresh_konkurencje_combobox()
+
+    def on_konkurencja_deleted(self, konkurencja_obj) -> None:
+        """Po usunięciu konkurencji z bazy — usuwa ją ze słownika i odświeża combobox."""
+        self.konkurencje.pop(konkurencja_obj.name, None)
         self._refresh_konkurencje_combobox()
 
     def _fill_zawody_data(self) -> None:

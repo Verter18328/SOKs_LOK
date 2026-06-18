@@ -10,7 +10,12 @@ Globals.set_main_directory()
 from PySide6.QtWidgets import QMenu, QListWidgetItem, QMessageBox
 from PySide6.QtCore import Qt, Signal, QObject
 
-from data_manager import seria_data_manager, zawody_data_manager, zawodnik_data_manager
+from data_manager import (
+    konkurencja_data_manager,
+    seria_data_manager,
+    zawody_data_manager,
+    zawodnik_data_manager,
+)
 
 class ListaZawodowContextMenu(QObject):
     """Obsługuje menu kontekstowe dla listy zawodów.
@@ -90,10 +95,10 @@ class ListaZawodowContextMenu(QObject):
 
 
 class KonkurencjeListContextMenu(QObject):
-    """Menu kontekstowe dla listy konkurencji w dialogu tworzenia zawodów.
+    """Menu kontekstowe dla listy konkurencji w dialogu tworzenia zawodów."""
 
-    """
-
+    konkurencja_edytowana = Signal(object)
+    konkurencja_usunieta_z_bazy = Signal(object)
 
     def __init__(self, ui) -> None:
         super().__init__()
@@ -102,20 +107,65 @@ class KonkurencjeListContextMenu(QObject):
         self.ui.konkurencje_list.customContextMenuRequested.connect(self.show_context_menu)
 
     def show_context_menu(self, position) -> None:
-        """Wyświetla menu z opcją usuwania konkurencji."""
+        """Wyświetla menu edycji, usunięcia z listy lub usunięcia z bazy."""
         selected_item = self.ui.konkurencje_list.itemAt(position)
         if not selected_item:
             return
         menu = QMenu()
-        usun_action = menu.addAction("Usuń")
+        edytuj_action = menu.addAction("Edytuj")
+        usun_z_listy_action = menu.addAction("Usuń z zawodów")
+        usun_z_bazy_action = menu.addAction("Usuń konkurencję")
         action = menu.exec(self.ui.konkurencje_list.mapToGlobal(position))
-        if action == usun_action:
-            self.usun_konkurencje(selected_item)
-            pass
+        if action == edytuj_action:
+            self.edytuj_konkurencje(selected_item)
+        elif action == usun_z_listy_action:
+            self.usun_konkurencje_z_listy(selected_item)
+        elif action == usun_z_bazy_action:
+            self.usun_konkurencje_z_bazy(selected_item)
 
-    def usun_konkurencje(self, selected_item: QListWidgetItem) -> None:
-        """Usuwa konkurencję — implementacja zależy od UI i logiki aplikacji."""
+    def edytuj_konkurencje(self, selected_item: QListWidgetItem) -> None:
+        """Otwiera dialog edycji wybranej konkurencji."""
+        konkurencja = selected_item.data(Qt.UserRole)
+        if not konkurencja:
+            return
+        from operator_ui_handler import EdytujKonkurencjeDialog
+
+        dialog = EdytujKonkurencjeDialog(parent=self.ui, konkurencja=konkurencja)
+        dialog.signals.konkurencja_updated.connect(
+            lambda updated: self._on_konkurencja_updated(selected_item, updated)
+        )
+        dialog.show_dialog()
+
+    def _on_konkurencja_updated(self, selected_item: QListWidgetItem, updated) -> None:
+        """Aktualizuje pozycję listy po edycji i emituje sygnał do odświeżenia comboboxa."""
+        selected_item.setText(updated.label())
+        selected_item.setData(Qt.UserRole, updated)
+        self.konkurencja_edytowana.emit(updated)
+
+    def usun_konkurencje_z_listy(self, selected_item: QListWidgetItem) -> None:
+        """Usuwa konkurencję tylko z listy wybranych (bez zmian w bazie)."""
         self.ui.konkurencje_list.takeItem(self.ui.konkurencje_list.row(selected_item))
+
+    def usun_konkurencje_z_bazy(self, selected_item: QListWidgetItem) -> None:
+        """Usuwa konkurencję z bazy (wraz z seriami i wynikami) i z listy w UI."""
+        konkurencja = selected_item.data(Qt.UserRole)
+        if not konkurencja or not konkurencja.id:
+            return
+        answer = QMessageBox.question(
+            self.ui,
+            "Usuń konkurencję",
+            f"Czy na pewno usunąć „{konkurencja.name}” z bazy?\n"
+            "Zostaną też usunięte wszystkie serie i wyniki tej konkurencji.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+        if not konkurencja_data_manager.delete_konkurencja(konkurencja.id):
+            QMessageBox.warning(self.ui, "Błąd", "Nie udało się usunąć konkurencji.")
+            return
+        self.ui.konkurencje_list.takeItem(self.ui.konkurencje_list.row(selected_item))
+        self.konkurencja_usunieta_z_bazy.emit(konkurencja)
 
 
 class ZawodnicyListContextMenu(QObject):

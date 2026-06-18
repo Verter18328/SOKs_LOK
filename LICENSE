@@ -1,0 +1,173 @@
+SOKs_LOK — Licencja własnościowa (Proprietary License)
+=======================================================
+
+Copyright (c) 2025–2026 Verter18328. Wszelkie prawa zastrzeżone.
+
+Wersja licencji: 1.0
+Data: 2026-06-18
+
+Niniejsza licencja („Licencja”) określa zasady korzystania z oprogramowania
+SOKs_LOK. Oprogramowanie nie jest oprogramowaniem typu open source. Publiczna
+dostępność kodu źródłowego w repozytorium nie stanowi udzielenia jakiejkolwiek
+licencji ani zgody na użytkowanie, kopiowanie, modyfikowanie lub
+rozpowszechnianie Oprogramowania.
+
+
+1. Definicje
+------------
+
+1.1. „Oprogramowanie” — program SOKs_LOK wraz z kodem źródłowym, kodem
+     wynikowym (skompilowanym, np. plik EXE), plikami interfejsu, zasobami
+     graficznymi, dokumentacją oraz wszelkimi późniejszymi wersjami
+     i aktualizacjami.
+
+1.2. „Właściciel” — Verter18328, podmiot wyłącznie uprawniony z tytułu praw
+     autorskich do Oprogramowania.
+
+1.3. „Użytkownik” — każda osoba fizyczna lub prawna, która uzyskuje dostęp
+     do Oprogramowania lub korzysta z niego w jakiejkolwiek formie.
+
+1.4. „Komponenty Zewnętrzne” — biblioteki i narzędzia osób trzecich
+     wykorzystywane przez Oprogramowanie, objęte odrębnymi licencjami
+     (zob. THIRD_PARTY_NOTICES.md).
+
+
+2. Prawa autorskie i własność
+-----------------------------
+
+2.1. Oprogramowanie stanowi własność Właściciela i jest chronione przepisami
+     o prawie autorskim oraz innymi przepisami o ochronie własności
+     intelektualnej.
+
+2.2. Wszelkie prawa, które nie zostały wyraźnie udzielone w Licencji,
+     pozostają zastrzeżone na rzecz Właściciela.
+
+2.3. Licencja nie przenosi na Użytkownika żadnych praw autorskich majątkowych
+     ani prawa własności do Oprogramowania.
+
+
+3. Zakres licencji
+------------------
+
+3.1. Z zastrzeżeniem postanowień Licencji oraz przypadków wprost dozwolonych
+     przez bezwzględnie obowiązujące przepisy prawa, Właściciel nie udziela
+     Użytkownikowi żadnych uprawnień do użytkowania, kopiowania,
+     modyfikowania ani rozpowszechniania Oprogramowania.
+
+3.2. Korzystanie z Oprogramowania przez podmioty inne niż Właściciel jest
+     dopuszczalne wyłącznie na podstawie odrębnej, pisemnej zgody lub umowy
+     licencyjnej, o której mowa w punkcie 5.
+
+
+4. Ograniczenia
+---------------
+
+Bez uprzedniej pisemnej zgody Właściciela zabronione jest w szczególności:
+
+4.1. kopiowanie, rozpowszechnianie lub publiczne udostępnianie Oprogramowania
+     lub jego części, w tym w formie skompilowanej;
+
+4.2. modyfikowanie Oprogramowania lub tworzenie utworów zależnych;
+
+4.3. dekompilacja, deasemblacja lub inżynieria wsteczna — poza zakresem
+     bezwzględnie dozwolonym przez obowiązujące prawo;
+
+4.4. usuwanie lub zmienianie informacji o prawach autorskich, oznaczeń
+     Licencji lub innych zastrzeżeń zawartych w Oprogramowaniu;
+
+4.5. sublicencjonowanie, najem, dzierżawa, odsprzedaż lub przenoszenie praw
+     do Oprogramowania na osoby trzecie;
+
+4.6. wykorzystywanie Oprogramowania do tworzenia produktów lub usług
+     konkurencyjnych wobec SOKs_LOK.
+
+
+5. Wdrożenia u podmiotów trzecich
+---------------------------------
+
+5.1. Udostępnienie Oprogramowania innym strzelnicom, organizacjom lub osobom
+     trzecim — w tym instalacja, wdrożenie infrastruktury lub świadczenie
+     usług na jego podstawie — wymaga odrębnej, pisemnej umowy licencyjnej
+     zawartej z Właścicielem.
+
+5.2. Zakres takiego wdrożenia, wynagrodzenie, warunki wsparcia oraz
+     aktualizacji określa wyłącznie umowa, o której mowa w punkcie 5.1.
+
+
+6. Komponenty Zewnętrzne
+------------------------
+
+6.1. Oprogramowanie korzysta z Komponentów Zewnętrznych objętych własnymi
+     licencjami open source (m.in. PySide6 / Qt na licencji LGPL). Ich wykaz
+     i warunki opisano w pliku THIRD_PARTY_NOTICES.md.
+
+6.2. Postanowienia Licencji dotyczą wyłącznie kodu własnego SOKs_LOK
+     i nie modyfikują warunków licencji Komponentów Zewnętrznych.
+
+
+7. Brak gwarancji
+-----------------
+
+7.1. Oprogramowanie jest dostarczane „TAK JAK JEST” (AS IS), bez jakiejkolwiek
+     gwarancji wyraźnej lub dorozumianej, w tym bez gwarancji przydatności
+     handlowej, przydatności do określonego celu oraz nienaruszania praw
+     osób trzecich.
+
+7.2. Właściciel nie gwarantuje nieprzerwanego ani bezbłędnego działania
+     Oprogramowania, ani poprawności wyników generowanych podczas zawodów
+     strzeleckich. Użytkownik korzysta z Oprogramowania na własną
+     odpowiedzialność.
+
+
+8. Ograniczenie odpowiedzialności
+---------------------------------
+
+W najszerszym zakresie dozwolonym przez obowiązujące prawo Właściciel nie
+ponosi odpowiedzialności za jakiekolwiek szkody bezpośrednie, pośrednie,
+przypadkowe, szczególne lub następcze wynikające z korzystania lub
+niemożności korzystania z Oprogramowania, w tym za utratę danych, utratę
+przychodów lub przerwy w działalności.
+
+
+9. Czas obowiązywania i skutki naruszenia
+-----------------------------------------
+
+9.1. Wszelkie uprawnienia ewentualnie udzielone na podstawie Licencji lub
+     odrębnej umowy wygasają automatycznie z chwilą naruszenia przez
+     Użytkownika któregokolwiek z jej postanowień.
+
+9.2. Wygaśnięcie uprawnień nie pozbawia Właściciela prawa do dochodzenia
+     roszczeń z tytułu naruszenia.
+
+
+10. Prawo właściwe i jurysdykcja
+--------------------------------
+
+10.1. Licencja podlega prawu polskiemu.
+
+10.2. Spory wynikające z Licencji rozstrzyga sąd właściwy miejscowo dla
+      siedziby (miejsca zamieszkania) Właściciela, o ile bezwzględnie
+      obowiązujące przepisy nie stanowią inaczej.
+
+
+11. Postanowienia końcowe
+-------------------------
+
+11.1. Jeżeli którekolwiek postanowienie Licencji okaże się nieważne lub
+      bezskuteczne, pozostałe postanowienia zachowują moc, a postanowienie
+      nieważne zastępuje się postanowieniem najbliższym jego celowi.
+
+11.2. Licencja stanowi całość uzgodnień dotyczących korzystania
+      z Oprogramowania, z zastrzeżeniem odrębnych umów licencyjnych zawartych
+      na piśmie.
+
+11.3. Właściciel zastrzega sobie prawo do zmiany warunków Licencji dla
+      przyszłych wersji Oprogramowania.
+
+
+12. Kontakt
+-----------
+
+W sprawie licencji komercyjnej, wdrożenia lub zgody na korzystanie
+z Oprogramowania należy skontaktować się z Właścicielem repozytorium
+(GitHub: Verter18328).

@@ -1,4 +1,5 @@
-"""Punkt wejścia aplikacji — okna i dialogi operatora.
+"""
+Punkt wejścia aplikacji — okna i dialogi operatora.
 
 Każda klasa jest wrapperem ładującym plik `.ui` i podłączającym odpowiednie sygnały.
 Wspólna logika inicjalizacji okna wydzielona do `_setup_window()`.
@@ -86,6 +87,25 @@ class KreatorKonkurencjiDialog(QDialog):
         global_config = global_config if global_config is not None else Globals()
         _setup_window(self, global_config, "KREATOR_KONKURENCJI_DIALOG", "Kreator konkurencji")
         self.signals = SignalsKreatorKonkurencjiDialog(self.ui, parent)
+
+    def show_dialog(self) -> None:
+        """Wyświetla dialog."""
+        self.ui.show()
+
+
+class EdytujKonkurencjeDialog(QDialog):
+    """Dialog edycji konkurencji — wrapper ładujący UI i podłączający sygnały."""
+
+    def __init__(
+        self,
+        global_config: Globals | None = None,
+        parent=None,
+        konkurencja: Konkurencja | None = None,
+    ) -> None:
+        super().__init__(parent)
+        global_config = global_config if global_config is not None else Globals()
+        _setup_window(self, global_config, "KREATOR_KONKURENCJI_DIALOG", "Edytuj konkurencję")
+        self.signals = SignalsKreatorKonkurencjiDialog(self.ui, parent, konkurencja=konkurencja)
 
     def show_dialog(self) -> None:
         """Wyświetla dialog."""

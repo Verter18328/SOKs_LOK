@@ -108,7 +108,7 @@ class SignalsOperatorWindow:
         if hasattr(self.ui, "zamknij_zawody_button"):
             self.ui.zamknij_zawody_button.setEnabled(False)
             self.ui.zamknij_zawody_button.setToolTip(
-                "Zamykanie zawodów (blokada edycji, druk) — planowane w wersji 1.0."
+                "Zamykanie zawodów (blokada edycji, druk) — funkcja w przygotowaniu."
             )
         self.ui.start_button.clicked.connect(self.lista_startow_clicked)
 

@@ -243,6 +243,21 @@ class KonkurencjaDataManager:
             return None
         return self.get_konkurencja_by_id(latest_id)
 
+    def update_konkurencja(self, konkurencja_id: int, name: str, shots_quantity: int) -> Konkurencja | None:
+        """Aktualizuje konkurencję po ID i zwraca zaktualizowany obiekt."""
+        query = "UPDATE konkurencje_lista SET nazwa = ?, ilosc_strzalow = ? WHERE id = ?"
+        result = self.database.query(query, (name, shots_quantity, konkurencja_id))
+        if result is None or result == 0:
+            return None
+        return self.get_konkurencja_by_id(konkurencja_id)
+
+    def delete_konkurencja(self, konkurencja_id: int) -> bool:
+        """Usuwa konkurencję po ID (linki do zawodów i serie — kaskada FK w bazie)."""
+        result = self.database.query("DELETE FROM konkurencje_lista WHERE id = ?", (konkurencja_id,))
+        if result is None or result == 0:
+            return False
+        return True
+
     def get_all_konkurencje(self) -> dict[str, Konkurencja] | None:
         """Zwraca słownik `nazwa -> Konkurencja` dla wszystkich konkurencji."""
         query = "SELECT id, nazwa, ilosc_strzalow FROM konkurencje_lista"

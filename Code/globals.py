@@ -62,7 +62,6 @@ def _user_data_path(*parts: str) -> str:
 # - Ustawić maksymalną ilość wyników wyszukiwania zawodników i dodać przycisk 'Pokaż więcej wyników'
 # - Dodać dynamiczny rozmiar spacera w zależności od ilości wyników wyszukiwania zawodników
 # - Naprawić display zawodów w 'Zarządzaj zawodami'
-# - Obsługa dogrywek
 
 
 class Globals:
@@ -87,9 +86,6 @@ class Globals:
     UI_PATHS_DICT = {
         'OPERATOR_WINDOW': _asset_path('Ui_Files', 'OperatorWindow.ui'),
         'NEW_COMPETITION_DIALOG': _asset_path('Ui_Files', 'NoweZawodyDialog.ui'),
-        '5_SHOOTS_TABLE': _asset_path('Ui_Files', 'Tabelka5Strzałów.ui'),
-        '10_SHOOTS_TABLE': _asset_path('Ui_Files', 'Tabelka10Strzałów.ui'),
-        'ZAPADKI_TABLE': _asset_path('Ui_Files', 'TabelkaZapadki.ui'),
         'KREATOR_KONKURENCJI_DIALOG': _asset_path('Ui_Files', 'KreatorKonkurencji.ui'),
         'ZAREJESTRUJ_SERIE_DIALOG': _asset_path('Ui_Files', 'ZarejestrujSerie.ui'),
         'EDIT_SERIA_DIALOG': _asset_path('Ui_Files', 'EdytujSerie.ui'),
