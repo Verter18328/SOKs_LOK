@@ -20,12 +20,12 @@ def _dev_project_root() -> str:
 
 
 def _frozen_exe_dir() -> str:
-    """Folder zawierający `SOKs_LOK.exe` (onedir)."""
+    """Folder zawierający `SOKs_LOK.exe` (onefile lub onedir)."""
     return pathlib.Path(sys.executable).parent.as_posix()
 
 
 def _bundled_assets_root() -> str:
-    """Katalog z `Ui_Files` i `Resources` — w PyInstaller 6 zwykle `_internal`, nie obok `.exe`."""
+    """Katalog z `Ui_Files` i `Resources` — onefile: `_MEIPASS`; onedir: `_internal` lub obok `.exe`."""
     if not getattr(sys, "frozen", False):
         return _dev_project_root()
     marker = pathlib.Path("Ui_Files", "OperatorWindow.ui")

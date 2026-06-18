@@ -104,11 +104,11 @@ Projekt jest modularny — logika UI, walidacja i dostęp do danych są rozdziel
 
 ### Windows — pakiet z GitHub Releases
 
-Gotowy build (EXE) publikowany jest w sekcji
+Gotowy build (jeden plik `SOKs_LOK.exe`) publikowany jest w sekcji
 [GitHub Releases](https://github.com/Verter18328/SOKs_LOK/releases).
-Rozpakuj archiwum i uruchom `SOKs_LOK.exe` z całego folderu dystrybucyjnego
-(nie kopiuj samego pliku `.exe` bez `_internal/`). Baza danych `Database_Files/Database.db`
-powstanie przy pierwszym uruchomieniu obok `SOKs_LOK.exe`.
+Pobierz plik `.exe`, umieść go w dowolnym folderze (np. `C:\Programy\SOKs_LOK\`)
+i uruchom. Baza danych `Database_Files/Database.db` powstanie przy pierwszym
+uruchomieniu **w tym samym folderze** co `SOKs_LOK.exe`.
 
 Szczegóły pierwszego uruchomienia (antywirus, SmartScreen): zob.
 [Antywirus i pierwsze uruchomienie (Windows)](#antywirus-i-pierwsze-uruchomienie-windows).
@@ -128,7 +128,7 @@ uruchomieniu na Windows może się zdarzyć:
 **Zalecenia:**
 
 - Pobieraj tylko z oficjalnego repozytorium GitHub (Releases), nie z nieznanych mirrorów.
-- Nie uruchamiaj samego `.exe` bez folderu `_internal/` — to uszkodzona instalacja.
+- Pierwsze uruchomienie onefile może trwać dłużej (rozpakowanie do folderu tymczasowego).
 - Aplikacja nie wymaga uprawnień administratora ani dostępu do sieci do podstawowej pracy.
 
 ### Uruchomienie ze źródeł (deweloperskie)
