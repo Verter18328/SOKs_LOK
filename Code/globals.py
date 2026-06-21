@@ -9,6 +9,9 @@ Zawiera klasę `Globals` przechowującą:
 import sys
 import pathlib
 import datetime
+import requests
+from packaging import version
+
 
 from database_connection import DatabaseConnection
 from PySide6.QtUiTools import QUiLoader
@@ -67,6 +70,10 @@ def _user_data_path(*parts: str) -> str:
 class Globals:
     """Centralna konfiguracja aplikacji — formaty, ścieżki, połączenie z bazą danych."""
 
+    VERSION = '1.0.0'
+    GITHUB_REPO_URL = 'https://github.com/Verter18328/SOKs_LOK'
+
+
     # ─── Formaty dat i czasu ───────────────────────────────────────────
 
     DATE_FORMAT_PY = '%d/%m/%Y'
@@ -104,6 +111,19 @@ class Globals:
         self.database = DatabaseConnection()
         self.database.connect()
         self.database.disconnect()
+    
+    def check_for_updates(self) -> tuple[bool, str | None]:
+        """Sprawdza, czy istnieje nowa wersja aplikacji na GitHub."""
+        response = requests.get(f'https://api.github.com/repos/Verter18328/SOKs_LOK/releases/latest')
+        if response.status_code == 200:
+            latest_version = response.json()['tag_name']
+            if version.parse(latest_version) > version.parse(self.VERSION):
+                file_url = response.json()['assets'][0]['browser_download_url']
+                return True, file_url
+            else:
+                return False, None
+        else:
+            return False, None
 
     @classmethod
     def _ensure_database_path(cls) -> None:
